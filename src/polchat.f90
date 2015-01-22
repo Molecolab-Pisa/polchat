@@ -1,4 +1,8 @@
-Program chpol
+Program polchat
+!
+! This program computes the ESP charges consistent with an Induced-dipole
+! treatment of polarisability.
+!
 !
 IMPLICIT REAL*8 (A-H,O-Z)
 DATA Ang2au,Deb2Au/1.889725989d0,0.393430201407683d0/
@@ -45,11 +49,6 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
   Call PrtHdr(IOut)
   Call RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
 
-!filename = 'mol.gesp'
-!fileconn = 'mol.mol2'
-!filepol  = 'pol.in'
-!filecnst = 'cnstr.in'
-!IPrint=1
 !
 ! Read the Gaussian ESP file produced using the keywords:
 ! pop=esp Iop(6/50=1)
@@ -76,17 +75,20 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
    READ(12,*) pol(I)
  ENDDO
  CLOSE(12)
+! Wang AL option IMMPCn = 4
+  IMMPCn = 4
+! Wang DL option IMMPCn = 5 (NYI)
+! IMMPCn = 5
 !
 ! *******************************************************************
 ! Compute charge-charge and charge-dipole screenings
 !
   ALLOCATE(ScrChCh(nch,nch), ScrChPl(nch,nch))
-  Call MkScr(IPrint,IOut,nch,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
+  Call MkScr(IOut,IPrint,nch,CChg,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
 !
 ! *******************************************************************
 ! Compute, invert and store the MMPol matrix
 !
- IMMPCn = 4
  ALLOCATE(D(3*nch,3*nch))
  Call MMPMTRX(IPrint,IOut,nch,pol,CChg,D,IAnMMP,IMMPCn,LAnMMP)
 !
@@ -119,19 +121,6 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
   call FixedDip(IOut,IPrint,nch,CChg,Qesp,DipFixESP)
   call FixedDip(IOut,IPrint,nch,CChg,Qpesp,DipFixPESP)
   DipPESP = DipFixPESP + DipIndPESP
-
- 
-! Comparison with octave
-!  if (IPrint.ge.2) write(IOut,1100) fileoct
-!  open(file=fileoct,unit=25)
-!  allocate(QOct(nch))
-!  do i = 1, nch
-!    read(25,*) QOct(i)
-!  enddo
-!  ErrOct = FitErr(IOut,IPrint,.true.,nch,ngr,QOct,RChGr,Rij,Rij3,D,ScrChPl,Vqm,DipIndOct)
-!  QSumO = sum(QOct)
-!  call FixedDip(IOut,IPrint,nch,CChg,QOct,DipFixOct)
-!  DipOct = DipFixOct + DipIndOct
 
   write(IOut,6000)
   write(IOut,6020)
@@ -628,7 +617,7 @@ endif
 close(15)
 return
 end subroutine
-END PROGRAM chpol
+END PROGRAM polchat
 !------------------------------------------------------------------------------------   
 !------------------------------------------------------------------------------------   
 !------------------------------------------------------------------------------------   
@@ -1040,6 +1029,8 @@ CHARACTER(LEN=50) :: fileconn,what
 1102 Format('ERROR: Number of atom in mol2 is ',I5,' expected number is ',I6)
 1103 Format(6X,2(I5))
 1104 Format(I5,'|',9(I5))
+1110 FORMAT(' AT = ',I6,' EN = ',I6,' AT1 = ',I6,' AT2 = ',I6)
+1115 FORMAT(' VECTOR = ',(10(I6,1X)))
 OPEN(unit=11,file=fileconn,status='unknown')
 !
 ! Skip the first two lines and read the number of atoms and number of 
@@ -1048,7 +1039,7 @@ OPEN(unit=11,file=fileconn,status='unknown')
 !
 READ(11,*)
 READ(11,*)
-READ(11,1101) natoms,nbond
+READ(11,*) natoms,nbond
 If (natoms.ne.nch ) Then
   WRITE(IOut,1102) natoms,nch
   STOP
@@ -1065,7 +1056,7 @@ DO I=1,nch+10
 ENDDO
 10 continue ! WRITE(IOut,*) 'Found',what
 DO I=1,nbond
-  READ(11,1103) ib1(I),ib2(I)
+  READ(11,*) IXXX, ib1(I), ib2(I)
 ENDDO
 CLOSE(11)
 !
@@ -1086,6 +1077,8 @@ DO N=1,nch
       K=K+1
     EndIf
     If (K.gt.LAnMMP) Then
+      WRITE(IOut,1110) N,I,ib1(I),ib2(I)
+      WRITE(IOut,1115) (IAnMMP(N,KK),KK=1,K)
       WRITE(IOut,*) 'ERROR: Exceed in IAnMMP dimension!'
       STOP
     EndIf
@@ -1237,10 +1230,44 @@ End Function
 !
 ! -------------------------------------------------------------------
 !
-Subroutine MkScr(IPrint,IOut,npol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
-  Implicit Real*8 (A-H,O-Z)
-  Dimension :: ScrChCh(npol,npol), ScrChPl(npol,npol), IAnMMP(npol,LAnMMP)
-  Integer, Allocatable :: Neigh(:,:)
+Subroutine MkScr(IOut,IPrint,NPol,CPol,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
+  IMPLICIT REAL*8 (A-H,O-Z)
+  DIMENSION :: ScrChCh(npol,npol), ScrChPl(npol,npol), IAnMMP(npol,LAnMMP)
+  DIMENSION :: CPol(3,*), R(3), Pol(NPol)
+  INTEGER, ALLOCATABLE :: Neigh(:,:)
+  LOGICAL :: DoThole
+  PARAMETER(a=1.7278d0,b=2.5874d0,c=2.0580d0)
+!
+! > DoThole .... True if you want to use Thole
+! > IScreen .... 1 = use Amber Screening Factor (a)
+!           .... 2 = use AL (Wang) Screening Factor (b)
+!           .... 3 = use DL (Wang) Screening Factor (c)
+! Detect intramolecular polarization treatment
+    If (IMMPCn.eq.3) Then
+      DoThole = .True.
+      IScreen = 1
+
+    ! Exclude Amber 1-2 and 1-3 interactions (Amber option)
+    ElseIf (IMMPCn.eq.1) then
+      DoThole = .False.
+      IScreen = 1
+
+    ! Exclude Amber 1-2 and 1-3 interactions (Amber option) and use Thole
+    ! smeared dipole interaction tensor for the others with Wang screening
+    ! parameter (AL model)
+    ElseIf (IMMPCn.eq.4) Then
+      DoThole = .True.
+      IScreen = 2
+
+    ! DL Amber model (compute all interactions with Thole linear screening)
+    ElseIf (IMMPCn.eq.5) Then
+      DoThole = .True.
+      IScreen = 3
+
+    Else
+      Write(6,*) 'Confused in polarization treatment.'
+      Stop
+    EndIf
 
   Allocate (Neigh(npol,npol))
   Neigh = 0
@@ -1309,11 +1336,37 @@ Subroutine MkScr(IPrint,IOut,npol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
     ScrChCh(i,i) = 0.0d0
     ScrChPl(i,i) = 0.0d0
     do j = i+1, npol
-      if (Neigh(i,j) .eq. 2 .or. Neigh(i,j) .eq. 3) then
-        ScrChCh(i,j) = 0.0d0
-        ScrChCh(j,i) = 0.0d0
-        ScrChPl(i,j) = 0.0d0
-        ScrChPl(j,i) = 0.0d0
+      if (IMMPCn.eq.1.or.IMMPCn.eq.4) then
+        if (Neigh(i,j) .eq. 2 .or. Neigh(i,j) .eq. 3) then
+          ScrChCh(i,j) = 0.0d0
+          ScrChCh(j,i) = 0.0d0
+          ScrChPl(i,j) = 0.0d0
+          ScrChPl(j,i) = 0.0d0
+        endif
+      endif
+      if (IMMPCn.eq.3.or.IMMPCn.eq.4.or.IMMPCn.eq.5) then
+!
+! Compute the distance between two polarizable sites.
+!
+          R(1) = CPol(1,J)-CPol(1,I)
+          R(2) = CPol(2,J)-CPol(2,I)
+          R(3) = CPol(3,J)-CPol(3,I)
+          Rij = Sqrt(R(1)*R(1) + R(2)*R(2) + R(3)*R(3))
+          If (IScreen.eq.1) s = a*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+          If (IScreen.eq.2) s = b*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+          If (IScreen.eq.3) s = c*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+!
+! Thole linear screening
+!
+          If (Rij.le.s) Then
+            v = Rij/s
+            Scale3 = 4.0d0*(v**3)-3.0d0*(v**4)
+            ScrChPl(i,j) = Scale3
+            ScrChPl(j,i) = Scale3
+          endif
+      elseif (IMMPCn.eq.2.or.IMMPCn.eq.0) then
+        Write(*,*) 'Code not ready to deal with groups option'
+        stop
       endif
     enddo
   enddo
@@ -1594,6 +1647,12 @@ DO I=1,npol
       IScreen = 2
       If (DoInter(I,J,IAnMMP,IMMPCn,npol)) DoCalc=.True.
 
+    ! DL Amber model (compute all interactions with Thole linear screening)
+    ElseIf (IMMPCn.eq.5) Then
+      DoThole = .True.
+      DoCalc=.True.
+      IScreen = 3
+
     Else
       Write(6,*) 'Confused in polarization treatment.'
       Stop
@@ -1712,11 +1771,12 @@ REAL*8 Function TensorMM(M,N,I,J,CPol,Pol,npol,DoThole,IScreen)
 IMPLICIT REAL*8 (A-H,O-Z)
 LOGICAL :: DoThole
 DIMENSION  :: CPol(3,*),Pol(*),R(3)
-PARAMETER(a=1.7278d0,b=2.5874d0)
+PARAMETER(a=1.7278d0,b=2.5874d0,c=2.0580d0)
 !
 ! > DoThole .... True if you want to use Thole  
 ! > IScreen .... 1 = use Amber Screening Factor (a)
 !           .... 2 = use AL (Wang) Screening Factor (b)
+!           .... 3 = use DL (Wang) Screening Factor (c)
 ! > M .......... x,y,z component of site I
 ! > N .......... x,y,z component of site J
 ! > I .......... index of I polarizable site
@@ -1733,6 +1793,7 @@ Rij = Sqrt(R(1)*R(1) + R(2)*R(2) + R(3)*R(3))
 If (DoThole) then
   If (IScreen.eq.1) s = a*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
   If (IScreen.eq.2) s = b*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+  If (IScreen.eq.3) s = c*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
 EndIf
 ! 
 ! Thole smeared dipole interaction tensor 
@@ -1870,11 +1931,35 @@ subroutine PrtHdr(IOut)
 !
 ! Print header
 !
-1000 format(/,1x,45('-'),/,21x,'Chpol',20x,/,1x,45('-'),/ &
-            '                              A MoLECoLab tool',/,&
-            '                   www.dcci.unipi.it/molecolab',/,&
-            ' S.Caprasecca & S.Jurinovich           ver 2.1',/,&
-            1x,45('-'),/)
+1000 FORMAT(/,                                                                  &
+     '                                                                      ',/,&
+     '                                       mm                             ',/,&
+     '                                    mMMm                              ',/,&
+     '                                  mMMMMm         m                    ',/,&
+     '                                 mMMMMm          mMm                  ',/,&
+     '                                 mMMMMm          mMm                  ',/,&
+     '                                 mMMMMMm        mMMm                  ',/,&
+     '                                 MMMMMMMMMMMMMMMMMMm                  ',/,&
+     '                                mMMMMMMMMMMMMMMMMMm                   ',/,&
+     '       __  ___      __    ____________      __MMMm     __             ',/,&
+     '      /  |/  /___  / /   / ____/ ____/___  / /  ____ _/ /_            ',/,&
+     '     / /|_/ / __ \/ /   / __/ / /   / __ \/ /  / __ `/ __ \           ',/,&
+     '    / /  / / /_/ / /___/ /___/ /___/ /_/ / /__/ /_/ / /_/ /           ',/,&
+     '   /_/  /_/\__________/_____/\____/_____/_____|__,_/_.___/            ',/,&
+     '           /_  __/ __ \/ __ \/ /  / ___/                              ',/,&
+     '            / / / / / / / / / /   \__ \                               ',/,&
+     '           / / / /_/ / /_/ / /___ __/ /                               ',/,&
+     '          /_/  \____/\____/_____/____/                                ',/,&
+     '            mMMMMMMMMMMMMMMMm                                         ',/,&
+     '          mMMMMMMMMMMMMMMMm                                           ',/,&
+     '        mMMMMMMMMMMMMMMMMM   + ------------------------------------ + ',/,&
+     '       mMMMMMMMMMMMMMMMMm    |    P O L C H A T                     | ',/,&
+     '      mMMMMMMMMMMMMMMMMMm    + ------------------------------------ + ',/,&
+     '      mMMMMm       mMMMMMm   | Stefano Caprasecca                   | ',/,&
+     '      mMMMm       mMMMMMMm   | Sandro Jurinovich                    | ',/,&
+     '       mMm       mMMMMMMm    | Carles Curutchet           ver 3.0.0 | ',/,&
+     '        m       mMMMMMMm     |          www.dcci.unipi.it/molecolab | ',/,&
+     '               mMMMMMm       + ------------------------------------ + ',/)
   write(IOut,1000)
   return
 end subroutine
