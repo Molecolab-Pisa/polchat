@@ -22,6 +22,7 @@ Parameter LAnMMP = 9
 ! ChgESP ..... fitted ESP charges 
 ! pol ........ isotropic polarizabilities (a.u.)
 CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
+LOGICAL :: LScrChPl
 ! filename ... name of the Gaussian ESP file
 !
 ! Declaration of vectors for minimization routine:
@@ -40,6 +41,8 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
               ' > standard               > normal printout')
 3020 format(/,' ---- Printout -------------------------------',/, &
               ' > debug                  > extra printout')
+3030 format(/,' > Wang Chg-Pol screening > active (expert use only)')
+3035 format(/,' > Wang Chg-Pol screening > not active')
 5110 format(/,' Computing ESP charges...')
 5120 format(' Computing pol-ESP charges...',/)
 !
@@ -47,7 +50,7 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
 !
   IOut = 6
   Call PrtHdr(IOut)
-  Call RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
+  Call RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst,LScrChPl)
 
 !
 ! Read the Gaussian ESP file produced using the keywords:
@@ -62,6 +65,8 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
  ALLOCATE(IAnMMP(nch,LAnMMP),pol(nch))
  if (IPrint.ne.0) then
    write(IOut,3000) filename,fileconn,filepol,filecnst
+   if (LScrChPl) write(IOut,3030)
+   if (.NOT.LScrChPl) write(IOut,3035)
    if (IPrint.eq.1) write(IOut,3010)
    if (IPrint.eq.2) write(IOut,3020)
  endif
@@ -84,7 +89,8 @@ CHARACTER(LEN=50) filename,filepol,fileconn,filecnst !,fileoct
 ! Compute charge-charge and charge-dipole screenings
 !
   ALLOCATE(ScrChCh(nch,nch), ScrChPl(nch,nch))
-  Call MkScr(IOut,IPrint,nch,CChg,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
+  Call MkScr(IOut,IPrint,nch,CChg,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP, &
+    LScrChPl)
 !
 ! *******************************************************************
 ! Compute, invert and store the MMPol matrix
@@ -1029,8 +1035,6 @@ CHARACTER(LEN=50) :: fileconn,what
 1102 Format('ERROR: Number of atom in mol2 is ',I5,' expected number is ',I6)
 1103 Format(6X,2(I5))
 1104 Format(I5,'|',9(I5))
-1110 FORMAT(' AT = ',I6,' EN = ',I6,' AT1 = ',I6,' AT2 = ',I6)
-1115 FORMAT(' VECTOR = ',(10(I6,1X)))
 OPEN(unit=11,file=fileconn,status='unknown')
 !
 ! Skip the first two lines and read the number of atoms and number of 
@@ -1077,8 +1081,6 @@ DO N=1,nch
       K=K+1
     EndIf
     If (K.gt.LAnMMP) Then
-      WRITE(IOut,1110) N,I,ib1(I),ib2(I)
-      WRITE(IOut,1115) (IAnMMP(N,KK),KK=1,K)
       WRITE(IOut,*) 'ERROR: Exceed in IAnMMP dimension!'
       STOP
     EndIf
@@ -1230,44 +1232,38 @@ End Function
 !
 ! -------------------------------------------------------------------
 !
-Subroutine MkScr(IOut,IPrint,NPol,CPol,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
+Subroutine MkScr(IOut,IPrint,NPol,CPol,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP, &
+  LScrChPl)
   IMPLICIT REAL*8 (A-H,O-Z)
   DIMENSION :: ScrChCh(npol,npol), ScrChPl(npol,npol), IAnMMP(npol,LAnMMP)
   DIMENSION :: CPol(3,*), R(3), Pol(NPol)
   INTEGER, ALLOCATABLE :: Neigh(:,:)
-  LOGICAL :: DoThole
+  LOGICAL :: DoThole, LScrChPl
   PARAMETER(a=1.7278d0,b=2.5874d0,c=2.0580d0)
 !
 ! > DoThole .... True if you want to use Thole
 ! > IScreen .... 1 = use Amber Screening Factor (a)
 !           .... 2 = use AL (Wang) Screening Factor (b)
-!           .... 3 = use DL (Wang) Screening Factor (c)
+!           .... 3 = use DL (Wang) Screening Factor (c) [NYI]
 ! Detect intramolecular polarization treatment
-    If (IMMPCn.eq.3) Then
-      DoThole = .True.
-      IScreen = 1
-
-    ! Exclude Amber 1-2 and 1-3 interactions (Amber option)
-    ElseIf (IMMPCn.eq.1) then
-      DoThole = .False.
-      IScreen = 1
-
-    ! Exclude Amber 1-2 and 1-3 interactions (Amber option) and use Thole
-    ! smeared dipole interaction tensor for the others with Wang screening
-    ! parameter (AL model)
-    ElseIf (IMMPCn.eq.4) Then
-      DoThole = .True.
-      IScreen = 2
-
-    ! DL Amber model (compute all interactions with Thole linear screening)
-    ElseIf (IMMPCn.eq.5) Then
-      DoThole = .True.
-      IScreen = 3
-
-    Else
-      Write(6,*) 'Confused in polarization treatment.'
-      Stop
-    EndIf
+    IF (LScrChPl) THEN
+      IF (IMMPCn.EQ.3) THEN
+        DoThole = .TRUE.
+        IScreen = 1
+      ELSEIF (IMMPCn.EQ.1) THEN
+        DoThole = .FALSE.
+        IScreen = 1
+      ELSEIF (IMMPCn.EQ.4) THEN
+        DoThole = .TRUE.
+        IScreen = 2
+      ELSEIF (IMMPCn.EQ.5) THEN
+        DoThole = .TRUE.
+        IScreen = 3
+      ELSE
+        WRITE(6,*) 'Confused in polarization treatment.'
+        STOP
+      ENDIF
+    ENDIF
 
   Allocate (Neigh(npol,npol))
   Neigh = 0
@@ -1344,29 +1340,29 @@ Subroutine MkScr(IOut,IPrint,NPol,CPol,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP)
           ScrChPl(j,i) = 0.0d0
         endif
       endif
-      if (IMMPCn.eq.3.or.IMMPCn.eq.4.or.IMMPCn.eq.5) then
+      if (LScrChPl.AND.(IMMPCn.EQ.3.OR.IMMPCn.EQ.4.OR.IMMPCn.EQ.5)) THEN
 !
-! Compute the distance between two polarizable sites.
+! Compute the distance between two polarizable sites
 !
-          R(1) = CPol(1,J)-CPol(1,I)
-          R(2) = CPol(2,J)-CPol(2,I)
-          R(3) = CPol(3,J)-CPol(3,I)
-          Rij = Sqrt(R(1)*R(1) + R(2)*R(2) + R(3)*R(3))
-          If (IScreen.eq.1) s = a*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
-          If (IScreen.eq.2) s = b*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
-          If (IScreen.eq.3) s = c*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+        R(1) = CPol(1,J)-CPol(1,I)
+        R(2) = CPol(2,J)-CPol(2,I)
+        R(3) = CPol(3,J)-CPol(3,I)
+        Rij = Sqrt(R(1)*R(1) + R(2)*R(2) + R(3)*R(3))
+        If (IScreen.eq.1) s = a*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+        If (IScreen.eq.2) s = b*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
+        If (IScreen.eq.3) s = c*((Pol(I)*Pol(J))**(1.0d0/6.0d0))
 !
 ! Thole linear screening
 !
-          If (Rij.le.s) Then
-            v = Rij/s
-            Scale3 = 4.0d0*(v**3)-3.0d0*(v**4)
-            ScrChPl(i,j) = Scale3
-            ScrChPl(j,i) = Scale3
-          endif
+        If (Rij.le.s) Then
+          v = Rij/s 
+          Scale3 = 4.0d0*(v**3)-3.0d0*(v**4)
+          ScrChPl(i,j) = Scale3
+          ScrChPl(j,i) = Scale3
+        endif
       elseif (IMMPCn.eq.2.or.IMMPCn.eq.0) then
         Write(*,*) 'Code not ready to deal with groups option'
-        stop
+        STOP
       endif
     enddo
   enddo
@@ -1824,7 +1820,7 @@ End Function
 
 
 
-Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
+Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst,LScrChPl)
 !
 ! This subroutine reads input filenames and printout options from line
 !
@@ -1836,10 +1832,12 @@ Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
 !  -m ... before mol2 file name
 !  -p ... before specifying polarizability file name
 !  -c ... before specifying constraint file name
+!  -x ... include chg-pol screening as in Wang (experts only)
 !
 ! Example: chpol d g xxx.gesp m xxx.mol2 p pol.in c cnstr.in
 !
   integer IOut,IPrint,IArg,num_args
+  logical LScrChPl
   CHARACTER(LEN=50) filename,filepol,fileconn,filecnst
   character(len=50), dimension(:), allocatable :: args
 
@@ -1852,6 +1850,8 @@ Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
             '   -m (required) ... Followed by mol2 file name',/,           &
             '   -p (required) ... Followed by polarisability file name',/, &
             '   -c (required) ... Followed by constraints file name',/,    &
+            '   -x (optional) ... Also include Wang Chg-Pol screening -- WARNING: Expert use only.',/,             &
+            '                     Only use if the MMPol code includes such screening. If in doubt, do not use.',/, &
             '   -h (optional) ... Get this help message',/,                &
             '   -d (optional) ... Run in debug mode (extra printout)',/,   &
             '   -s (optional) ... Run in silent mode (minimum printout)')
@@ -1859,8 +1859,9 @@ Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
   num_args = command_argument_count()
   allocate(args(num_args))  
 
-  IPrint = 1
-  IGet   = 0
+  IPrint   = 1
+  IGet     = 0
+  LScrChPl = .FALSE.
   filename = ''
   fileconn = ''
   filepol  = ''
@@ -1892,6 +1893,8 @@ Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst)
       IPrint = 2
     elseif (args(IArg).eq.'-s') then
       IPrint = 0
+    elseif (args(IArg).eq.'-x') then
+      LScrChPl = .TRUE.
     elseif (args(IArg).eq.'-g') then
       IGet = 1
       if (IArg.eq.num_args) goto 800
@@ -1957,7 +1960,7 @@ subroutine PrtHdr(IOut)
      '      mMMMMMMMMMMMMMMMMMm    + ------------------------------------ + ',/,&
      '      mMMMMm       mMMMMMm   | Stefano Caprasecca                   | ',/,&
      '      mMMMm       mMMMMMMm   | Sandro Jurinovich                    | ',/,&
-     '       mMm       mMMMMMMm    | Carles Curutchet           ver 3.0.0 | ',/,&
+     '       mMm       mMMMMMMm    | Carles Curutchet           ver 3.1.0 | ',/,&
      '        m       mMMMMMMm     |          www.dcci.unipi.it/molecolab | ',/,&
      '               mMMMMMm       + ------------------------------------ + ',/)
   write(IOut,1000)
