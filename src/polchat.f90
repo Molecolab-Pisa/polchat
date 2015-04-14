@@ -6,6 +6,7 @@ Program polchat
 !
 IMPLICIT REAL*8 (A-H,O-Z)
 DATA Ang2au,Deb2Au/1.889725989d0,0.393430201407683d0/
+CHARACTER(50) :: VERSION = "3.1.0a"
 REAL*8, ALLOCATABLE :: CChg(:,:),CGrid(:,:),GESP(:),ChgESP(:),pol(:)
 REAL*8, ALLOCATABLE :: Vqm(:),X(:,:),B(:),RChg(:,:,:),D(:,:),R(:,:,:)
 REAL*8, ALLOCATABLE :: Rij(:,:,:),Rij3(:,:),RChGr(:,:,:), Qesp(:), Qpesp(:)
@@ -49,7 +50,7 @@ LOGICAL :: LScrChPl
 ! Read input files and printout options from input stream
 !
   IOut = 6
-  Call PrtHdr(IOut)
+  Call PrtHdr(IOut,VERSION)
   Call RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst,LScrChPl)
 
 !
@@ -1929,8 +1930,9 @@ Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst,LScrChPl)
 
 end subroutine
   
-subroutine PrtHdr(IOut)
+subroutine PrtHdr(IOut,VERSION)
   integer IOut
+  character*50 :: Version
 !
 ! Print header
 !
@@ -1956,13 +1958,14 @@ subroutine PrtHdr(IOut)
      '            mMMMMMMMMMMMMMMMm                                         ',/,&
      '          mMMMMMMMMMMMMMMMm                                           ',/,&
      '        mMMMMMMMMMMMMMMMMM   + ------------------------------------ + ',/,&
-     '       mMMMMMMMMMMMMMMMMm    |    P O L C H A T                     | ',/,&
+     '       mMMMMMMMMMMMMMMMMm    |            P O L C H A T             | ',/,&
      '      mMMMMMMMMMMMMMMMMMm    + ------------------------------------ + ',/,&
      '      mMMMMm       mMMMMMm   | Stefano Caprasecca                   | ',/,&
      '      mMMMm       mMMMMMMm   | Sandro Jurinovich                    | ',/,&
-     '       mMm       mMMMMMMm    | Carles Curutchet           ver 3.1.0 | ',/,&
+     '       mMm       mMMMMMMm    | Carles Curutchet           ver ',A5,' | ',/,&
      '        m       mMMMMMMm     |          www.dcci.unipi.it/molecolab | ',/,&
      '               mMMMMMm       + ------------------------------------ + ',/)
-  write(IOut,1000)
+
+  write(IOut,1000),VERSION
   return
 end subroutine
