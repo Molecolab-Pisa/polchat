@@ -1,0 +1,53 @@
+-----------------------------------------------------------------
+
+    POLCHAT   A polarisation-consistent charge-fitting tool
+              A Molecolab tool
+
+-----------------------------------------------------------------
+
+
+About POLCHAT
+-------------------------
+  POLCHAT is a tool developed by the Molecolab group at the
+    Department of Chemistry, University of Pisa, Italy.
+  For the other Molecolab tools please visit the website
+    www.dcci.unipi.it/molecolab/tools.
+
+  POLCHAT is written in fortran90. It derives atomic partial
+    charges, in the MK scheme, consistent with atomic 
+    polarisations in the induced-dipole approach. Different
+    interaction models are available (see documentation).
+
+Disclaimer and copyright
+-------------------------
+  POLCHAT is Copyright (C) 2014, 2015 S.Caprasecca, C.Curutchet, 
+    S.Jurinovich and B.Mennucci. The terms for using, copying, 
+    modifying, and distributing POLCHAT are specified in the file 
+    LICENSE.
+      
+Contacts
+-------------------------
+  Benedetta Mennucci
+  benedetta.mennucci@unipi.it
+  Dipartimento di Chimica e Chimica Industriale
+  Via G. Moruzzi 13, I-56124 Pisa PI, Italy
+
+Documentation
+-------------------------
+  The main documentation for POLCHAT usage is in doc/polchat.pdf.
+  There is also a limited help for commands:
+    polchat.exe -h
+
+Compilation & Testing
+-------------------------
+  POLCHAT can be compiled by running 'make' in /src.
+  Examples with input and output can be found in /examples and
+    can be used for testing.
+
+Citation
+-------------------------
+  Please cite this program as:
+    POLCHAT - A polarisation-consistent charge-fitting tool
+              A Molecolab tool
+              S.Caprasecca, C.Curutchet, S.Jurinovich and B.Mennucci
+              www.dcci.unipi.it/molecolab/tools
