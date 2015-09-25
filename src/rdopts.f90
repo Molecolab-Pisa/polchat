@@ -47,6 +47,7 @@ Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst,LScrChPl)
             '   -m (required) ... Followed by mol2 file name',/,           &
             '   -p (required) ... Followed by polarisability file name',/, &
             '   -c (required) ... Followed by constraints file name',/,    &
+            '   -r (optional) ... Also add restraint; followed by restraint parameter',/, &
             '   -x (optional) ... Also include Wang Chg-Pol screening -- WARNING: Expert use only.',/,             &
             '                     Only use if the MMPol code includes such screening. If in doubt, do not use.',/, &
             '   -h (optional) ... Get this help message',/,                &

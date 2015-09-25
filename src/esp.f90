@@ -20,7 +20,7 @@
 !
 ! -------------------------------------------------------------------
 !
-Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum)
+Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum,restr)
   Implicit Real*8 (A-H,O-Z)
   Dimension RChGr(4,ngr,npol), Vqm(ngr), X(npol+mcon,npol+mcon), B(npol+mcon)
   Dimension Qesp(npol+mcon)
@@ -51,6 +51,12 @@ Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum)
     enddo
   enddo
 
+! Add restraints if needed
+  if (restr.gt.1.0d-08) then
+    do k = 1, npol
+      X(k,k) = X(k,k) + restr
+    enddo
+  endif
 ! Solve system to find ESP charges: 
 !  (-) initialise elements
 

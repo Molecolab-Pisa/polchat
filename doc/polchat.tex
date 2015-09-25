@@ -23,13 +23,15 @@
 \end{center}
 \normalsize
 \begin{center}
-\emph{Stefano Caprasecca}\footnote{\texttt{stefano.caprasecca@for.unipi.it}}, \emph{Carles Curutchet and Sandro Jurinovich}
+\emph{Stefano Caprasecca}\footnote{\texttt{stefano.caprasecca@for.unipi.it}},
+\emph{Carles Curutchet, Sandro Jurinovich \& Benedetta Mennucci}
 \end{center}
 
 \section*{Presentation}
 
 \texttt{PolChat} is a Molecolab tool\footnote{\texttt{www.dcci.unipi.it/molecolab} ---
-For help please write to \texttt{molecolab.pisa@gmail.com} or to the reference author.}. It performs a
+For help or to require a copy of the program, please write to
+\texttt{benedetta.mennucci@unipi.it}.}. It performs a
 polarisable ESP fitting of a given molecule, according to one of the polarisable MM models available, based on the induced dipole formulation.
 
 The next sections describe how to use the tool and the theory behind it.
@@ -227,6 +229,21 @@ read
 \end{quote}
 \end{framed}
 
+\item[restraint] (Optional) The presence of a restraint is specified using the
+keyword \texttt{restr}, followed on the next line by the restraint parameter $a$, as
+in the example:
+\begin{framed}
+\begin{quote}
+\begin{verbatim}
+restr
+ 0.005
+\end{verbatim}
+\end{quote}
+\end{framed}
+This requires that a restraint is applied to all charges, following Model 2 of Bayly
+\emph{et al.}, \emph{J. Phys. Chem,} \textbf{97}, 10269 (1993). A typical value is
+0.005. Larger values might provide unphysical results.
+
 \end{itemize}
 
 There is no limit on the number of constraints imposed, as long as the conditions are
@@ -252,6 +269,8 @@ equiv
 equiv
  2
 18 19
+restr
+ 0.005
 \end{verbatim}
 \end{quote}
 \end{framed}
@@ -275,6 +294,7 @@ using the following options:
 \item[-p] (required) Followed by the polarisability file name
 \item[-c] (required) Followed by the constraints file name
 \item[-x] (optional) Also include Wang Charge--Polarisability screening. The default is not to include it. Only use if the polarisable MM model includes such screening.
+\item[-r] (optional) Also include restraint; followed by the restraint parameter
 \item[-h] (optional) Print out a help message and quit
 \item[-s] (optional) Run in silent mode (minimum printout)
 \item[-d] (optional) Run in debug mode (extra printout)
@@ -358,13 +378,16 @@ Therefore equation \ref{deriv} becomes:
 \begin{align}
 \frac{\partial J}{\partial q_x} =& - 2 \sum_i^m \left[ \overline{V}_i - \sum_j^n
 A_{ij} q_j - \sum_j^n E_{ij} q_j \right] \left[ A_{ix} + E_{ix} \right] = \nonumber \\
+\label{E:A}
 =& -2\sum_i^m \left[ \overline{V}_i - \sum_j^n F_{ij} q_j\right] F_{ix}
 \end{align}
 
 Setting this to zero to obtain the minimizing charges gives:
 \begin{align}
+\label{E:B}
 &\sum_i^m \left[\overline{V}_i - \sum_j^n F_{ij} q_j \right] F_{ix} = 0 \\
 &\sum_i^m \sum_j^n F_{xi}^\dagger F_{ij} q_j = \sum_i^m F_{ix} \overline{V}_i \\
+\label{E:C}
 &\sum_j^n G_{xj} q_j = H_x
 \end{align}
 
@@ -379,9 +402,8 @@ and the system is solved by:
 
 \subsection*{Constraints}
 
-Constraints are introduced in function $J_\mr{c}$. These are of three different kinds:
-total charge of a fragment, equivalence between $n$ atoms, and conservation of the
-total dipole moment. The conservation of the total molecular charge is a particular
+Constraints are introduced in function $J_\mr{c}$. These are of four different kinds:
+total charge of a fragment, equivalence between $n$ atoms, restraint and conservation of the total dipole moment. The conservation of the total molecular charge is a particular
 case of the first kind.
 
 \paragraph{Charge of a fragment}
@@ -446,6 +468,27 @@ G_{n,1} & G_{n,2} & \cdots & G_{n,i} & \cdots & G_{n,j} & \cdots & G_{n,n} & 0 \
 \right]
 \end{equation}
 
+\paragraph{Restraint}
+
+If the charges are restrained using a restraint parameter, an extra function is added
+so that large absolute values of charges are discouraged. The extra function is:
+\begin{equation}
+J_\mr{c} = a \sum_j q_j^2
+\end{equation}
+This function corresponds to that used in Model 2 of Bayly \emph{et al.}, \emph{J.
+Phys. Chem.} \textbf{97}, 10269 (1993). Note that a hyperbolic penalty function
+provided better results than the parabolic one, but the latter has linear derivatives
+in the charges and does not therefore require an iterative solution.
+
+The derivative of the constrained function is:
+\begin{equation}
+\frac{\partial}{\partial q_x} J_\mr{c} = 2 a q_x
+\end{equation}
+so that a diagonal term must be added to $\bs{G}$ of Equation(\ref{E:C})\footnote{Note that the 2 factor is cancelled when passing from Eq.(\protect\ref{E:A}) to Eq.(\protect\ref{E:B}).}:
+\begin{equation}
+\bs{G}_\mr{c} = \bs{G} + a \bs{1}
+\end{equation}
+
 \paragraph{Conservation of the total dipole moment}
 
 If the total dipole moment must be equal to $\overline{\bs{\mu}}$, this corresponds
@@ -503,7 +546,7 @@ Please contact the authors for comments or questions.
 Please cite this tool as: 
 
 \indent PolChat: A polarisation-consistent charge fitting tool. \\
-\indent S. Caprasecca, C. Curutchet, S. Jurinovich. \\
-\indent Molecolab Tools. 2014 \texttt{www.dcci.unipi.it/molecolab/tools}
+\indent S. Caprasecca, C. Curutchet, S. Jurinovich \& B. Mennucci. \\
+\indent Molecolab Tools. 2014-2015 \texttt{www.dcci.unipi.it/molecolab/tools}
 
 \end{document}

@@ -20,7 +20,7 @@
 !
 ! -------------------------------------------------------------------
 !
-Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,DInv,Qpesp,QSum)
+Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,DInv,Qpesp,QSum,restr)
   Implicit Real*8 (A-H,O-Z)
   Dimension RChGr(4,ngr,npol), Vqm(ngr), X(npol+mcon,npol+mcon), B(npol+mcon)
   Dimension Rij(4,npol,npol), Rij3(npol,npol)
@@ -76,6 +76,12 @@ Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh
   Hx = Matmul(Transpose(Fx),Vqm)
 ! --- Matrix X
   X(1:npol,1:npol) = Gx
+! --- Restraints
+  if (restr.gt.1.0d-08) then
+    do k = 1, npol
+      X(k,k) = X(k,k) + restr
+    enddo
+  endif
 ! --- Vector B
   B(1:npol) = Hx
 !---   
