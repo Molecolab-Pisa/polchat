@@ -25,7 +25,7 @@ Program polchat
 !
 IMPLICIT REAL*8 (A-H,O-Z)
 DATA Ang2au,Deb2Au/1.889725989d0,0.393430201407683d0/
-CHARACTER(50) :: VERSION = "3.2.1a"
+CHARACTER(50) :: VERSION = "3.2.2"
 REAL*8, ALLOCATABLE :: CChg(:,:),CGrid(:,:),GESP(:),ChgESP(:),pol(:)
 REAL*8, ALLOCATABLE :: Vqm(:),X(:,:),B(:),RChg(:,:,:),D(:,:),R(:,:,:)
 REAL*8, ALLOCATABLE :: Rij(:,:,:),Rij3(:,:),RChGr(:,:,:), Qesp(:), Qpesp(:)
@@ -35,6 +35,7 @@ REAL*8 :: DipQM(3) !DipFixOct(3), DipIndOct(3), DipOct(3)
 !-debug
 !real*8,allocatable :: QOct(:)
 INTEGER, ALLOCATABLE :: IAnMMP(:,:)
+INTEGER, ALLOCATABLE :: irestr(:)
 Parameter LAnMMP = 9
 ! CChg ....... coordinates of the atoms (a.u.)
 ! CGrid ...... coordinates of gridpoints (a.u.)
@@ -123,21 +124,21 @@ LOGICAL :: LScrChPl
 !
  if (IPrint.ge.2) write(IOut,1100) filecnst
  call FixedDip(IOut,IPrint,nch,CChg,Gesp,DipFixIni)
- call RdConstr(IOut,IPrint,filecnst,nch,mcon,X,B,DipFixIni,CChg,DipQM,restr)
+ call RdConstr(IOut,IPrint,filecnst,nch,mcon,X,B,DipFixIni,CChg,DipQM,restr,irestr,nrestr)
  Allocate (Qesp(nch+mcon))
 !
 ! Compute X and B matrices for ESP, and solve for ESP charges
 !
  if (IPrint.ge.2) write(IOut,5110) 
  CALL CPU_TIME(T1)
- call ESP(IOut,IPrint,nch,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSumE,restr)
+ call ESP(IOut,IPrint,nch,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSumE,restr,irestr,nrestr)
  deallocate(X,B)
  ErrESP  = FitErr(IOut,IPrint,.false.,nch,ngr,Qesp,RChGr,Rij,Rij3,RJunk,RJunk,Vqm,RJunk)
 
-  call RdConstrPol(IOut,IPrint,filecnst,nch,mcon,X,B,DipFixIni,Rij,Rij3,ScrChPl,D,CChg,DipQM,restr)
+  call RdConstrPol(IOut,IPrint,filecnst,nch,mcon,X,B,DipFixIni,Rij,Rij3,ScrChPl,D,CChg,DipQM,restr,irestr,nrestr)
   Allocate (Qpesp(nch+mcon))
   if (IPrint.ge.2) write(IOut,5120) 
-  call PESP(IOut,IPrint,nch,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,D,Qpesp,QSumP,restr)
+  call PESP(IOut,IPrint,nch,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,D,Qpesp,QSumP,restr,irestr,nrestr)
   ErrPESP = FitErr(IOut,IPrint,.true.,nch,ngr,Qpesp,RChGr,Rij,Rij3,D,ScrChPl,Vqm,DipIndPESP)
 !
 ! *******************************************************************
@@ -336,7 +337,7 @@ Subroutine readgesp(IOut,IPrint,filename,CChg,CGrid,Gesp,Vqm,nch,ngr,   &
   RETURN
 End Subroutine
 ! -------------------------------------------------------------------
-Subroutine RdConstr(IOut,IPrint,filecnst,nch,mcon,X,B,ESPDip,CChg,QMDip,restr)
+Subroutine RdConstr(IOut,IPrint,filecnst,nch,mcon,X,B,ESPDip,CChg,QMDip,restr,irestr,nrestr)
 !
 ! Read the constraints
 ! 
@@ -345,6 +346,7 @@ character(LEN=50) info,filecnst
 Real*8, Allocatable :: X(:,:),B(:)
 Real*8 :: RdDip(3), ESPDip(3), QMDip(3), CChg(3,nch)
 integer, allocatable :: temp(:)
+integer, allocatable :: irestr(:)
 Logical :: LDoDip
 !
 1000 format(/,' ---- Constraints ----------------------------')
@@ -355,7 +357,7 @@ Logical :: LDoDip
 1050 format(' > total dipole           > get from ESP     > ',3(f7.4,1x))
 1055 format(' > total dipole           > use QM dipole    > ',3(f7.4,1x))
 1060 format(' > total dipole           > no constraint')
-1080 format(' > restraint              >                  > ',f7.4)
+1080 format(' > restraint              > param    ',f7.5,' > atoms ',(15(1x,i4)))
 1070 format(/)
 1100 format(' ERROR IN FILE')
 1110 format(' RESTRAINT CANNOT BE NEGATIVE')
@@ -389,6 +391,7 @@ do while (1.eq.1)
     if (info.ne.'esp'.and.info.ne.'qm') read(15,*,END=8000) info !read extra line
   elseif (info.eq.'restr') then
     read(15,*,END=8000) info
+    read(15,*,END=8000) info
   else
     goto 8000
   endif
@@ -401,6 +404,7 @@ stop
 ! Continue here: allocate constraints
 9000 continue
 allocate(temp(nch),X(nch+mcon,nch+mcon),B(nch+mcon))
+allocate(irestr(nch))
 X = 0.0d0
 B = 0.0d0
 ! Read again: fill in vectors
@@ -452,8 +456,9 @@ do while (1.eq.1)
       goto 8000
     endif
   elseif (info.eq.'restr') then
-    read(15,*) restr
-    if (IPrint.ge.1) write(IOut,1080) restr
+    read(15,*) nrestr, restr
+    read(15,*) (irestr(i), i=1,nrestr)
+    if (IPrint.ge.1) write(IOut,1080) restr, (irestr(i), i=1,nrestr)
     if (restr.lt.0.0d0) goto 8010
   endif
 enddo
@@ -485,7 +490,7 @@ close(15)
 return
 end subroutine
 ! -------------------------------------------------------------------
-Subroutine RdConstrPol(IOut,IPrint,filecnst,nch,mcon,X,B,ESPDip,Rij,Rij3,Scr,DInv,CChg,QMDip,restr)
+Subroutine RdConstrPol(IOut,IPrint,filecnst,nch,mcon,X,B,ESPDip,Rij,Rij3,Scr,DInv,CChg,QMDip,restr,irestr,nrestr)
 !
 ! Read the constraints
 ! 
@@ -495,6 +500,7 @@ Real*8, Allocatable :: X(:,:),B(:)
 Real*8 :: RdDip(3), ESPDip(3), Rij(4,nch,nch), Rij3(nch,nch), QMDip(3)
 Real*8 :: Scr(nch,nch), DInv(3*nch,3*nch), CChg(3,nch)
 Real*8 :: Bx(3*nch,nch), Cx(3*nch,nch), Fx(nch,3), Gx(nch,3)
+integer, allocatable :: irestr(:)
 integer, allocatable :: temp(:)
 Logical :: LDoDip
 Parameter Small=1.0d-10
@@ -507,7 +513,7 @@ Parameter Small=1.0d-10
 1050 format(' Total dipole: get from ESP  [',3(f7.4,1x),']')
 1055 format(' Total dipole: use QM dipole [',3(f7.4,1x),']')
 1060 format(' Total dipole: no constraint')
-1080 format(' Restraint: ',f7.4)
+1080 format(' Restraint    [a  ',f6.3,'] :',(15(1x,i4)))
 1100 format(' ERROR IN FILE')
 1110 format(' RESTRAINT CANNOT BE NEGATIVE')
 2000 format(' X matrix (constraints only):')
@@ -542,6 +548,7 @@ do while (1.eq.1)
     read(15,*,END=8000) info
     if (info.ne.'esp'.and.info.ne.'qm') read(15,*,END=8000) info !read extra line
   elseif (info.eq.'restr') then
+    read(15,*,END=8000) info
     read(15,*,END=8000) info
   else
     goto 8000
@@ -606,8 +613,9 @@ do while (1.eq.1)
       goto 8000
     endif
   elseif (info.eq.'restr') then
-    read(15,*) restr
-    if (IPrint.ge.2) write(IOut,1080) restr
+    read(15,*) nrestr, restr
+    read(15,*) (irestr(i), i=1,nrestr)
+    if (IPrint.ge.2) write(IOut,1080) restr, (irestr(i), i=1,nrestr)
     if (restr.lt.0.0d0) goto 8010
   endif
 enddo

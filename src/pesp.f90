@@ -20,13 +20,13 @@
 !
 ! -------------------------------------------------------------------
 !
-Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,DInv,Qpesp,QSum,restr)
+Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,DInv,Qpesp,QSum,restr,irestr,nrestr)
   Implicit Real*8 (A-H,O-Z)
   Dimension RChGr(4,ngr,npol), Vqm(ngr), X(npol+mcon,npol+mcon), B(npol+mcon)
   Dimension Rij(4,npol,npol), Rij3(npol,npol)
   Dimension Qpesp(npol+mcon), ScrChPl(npol,npol), ScrChCh(npol,npol)
   Dimension dVdQ(ngr,npol),dEdQ(3*npol,npol),dMudQ(3*npol,npol),DInv(3*npol,3*npol)
-  Dimension RTemp(ngr,3*npol),dVdQChg(ngr,npol),dVdQPol(ngr,npol), E(npol,npol)
+  Dimension RTemp(ngr,3*npol),dVdQChg(ngr,npol),dVdQPol(ngr,npol), E(npol,npol), irestr(nrestr)
   Integer, Allocatable :: IPIV(:)
   Real*8, Allocatable  :: WORK(:)
   Real*8, Allocatable  :: Ax(:,:),BxPol(:,:),BxGrd(:,:),Cx(:,:),Ex(:,:),Fx(:,:),Gx(:,:),Hx(:)
@@ -78,8 +78,8 @@ Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh
   X(1:npol,1:npol) = Gx
 ! --- Restraints
   if (restr.gt.1.0d-08) then
-    do k = 1, npol
-      X(k,k) = X(k,k) + restr
+    do k = 1, nrestr
+      X(irestr(k),irestr(k)) = X(irestr(k),irestr(k)) + restr
     enddo
   endif
 ! --- Vector B
@@ -119,6 +119,7 @@ Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh
 !  (-) invert matrix X
 
   M = npol+mcon
+  INFO = 0
   Call DGETRF(M,M,X,M,IPIV,INFO)
   Call DGETRI(M,X,M,IPIV,WORK,LWORK,INFO)
 

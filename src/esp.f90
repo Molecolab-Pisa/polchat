@@ -20,10 +20,10 @@
 !
 ! -------------------------------------------------------------------
 !
-Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum,restr)
+Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum,restr,irestr,nrestr)
   Implicit Real*8 (A-H,O-Z)
   Dimension RChGr(4,ngr,npol), Vqm(ngr), X(npol+mcon,npol+mcon), B(npol+mcon)
-  Dimension Qesp(npol+mcon)
+  Dimension Qesp(npol+mcon), irestr(nrestr)
   Integer, Allocatable :: IPIV(:)
   Real*8, Allocatable  :: WORK(:)
  1000 Format(' ESP matrix: Element ',i6,' has an illegal value',/,' Halting.')
@@ -53,8 +53,8 @@ Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum,restr)
 
 ! Add restraints if needed
   if (restr.gt.1.0d-08) then
-    do k = 1, npol
-      X(k,k) = X(k,k) + restr
+    do k = 1, nrestr
+      X(irestr(k),irestr(k)) = X(irestr(k),irestr(k)) + restr
     enddo
   endif
 ! Solve system to find ESP charges: 
