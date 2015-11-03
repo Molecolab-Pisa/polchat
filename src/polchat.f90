@@ -25,7 +25,7 @@ Program polchat
 !
 IMPLICIT REAL*8 (A-H,O-Z)
 DATA Ang2au,Deb2Au/1.889725989d0,0.393430201407683d0/
-CHARACTER(50) :: VERSION = "3.2.2"
+CHARACTER(50) :: VERSION = "3.2.2a"
 REAL*8, ALLOCATABLE :: CChg(:,:),CGrid(:,:),GESP(:),ChgESP(:),pol(:)
 REAL*8, ALLOCATABLE :: Vqm(:),X(:,:),B(:),RChg(:,:,:),D(:,:),R(:,:,:)
 REAL*8, ALLOCATABLE :: Rij(:,:,:),Rij3(:,:),RChGr(:,:,:), Qesp(:), Qpesp(:)
@@ -36,7 +36,7 @@ REAL*8 :: DipQM(3) !DipFixOct(3), DipIndOct(3), DipOct(3)
 !real*8,allocatable :: QOct(:)
 INTEGER, ALLOCATABLE :: IAnMMP(:,:)
 INTEGER, ALLOCATABLE :: irestr(:)
-Parameter LAnMMP = 9
+Integer, Parameter :: LAnMMP = 9
 ! CChg ....... coordinates of the atoms (a.u.)
 ! CGrid ...... coordinates of gridpoints (a.u.)
 ! Gesp ....... Gaussian ESP charge result (for check)
@@ -503,7 +503,7 @@ Real*8 :: Bx(3*nch,nch), Cx(3*nch,nch), Fx(nch,3), Gx(nch,3)
 integer, allocatable :: irestr(:)
 integer, allocatable :: temp(:)
 Logical :: LDoDip
-Parameter Small=1.0d-10
+Real*8, Parameter :: Small=1.0d-10
 !
 1000 format(/,'    Summary of constraints')
 1010 format(' Total charge [',f6.3,']')
