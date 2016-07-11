@@ -40,7 +40,7 @@ all:
 endif
 
 
-OBJECTS = chpot.o chpotpol.o dist.o dointer.o esp.o fiterr.o fixeddip.o mkdvdq.o mkrij.o mkscr.o mmpmtrx.o pesp.o rdopts.o readconn.o rms.o tensormm.o polchat.o 
+OBJECTS = chpot.o chpotpol.o dist.o dointer.o esp.o fiterr.o fixeddip.o mkdvdq.o mkrij.o mkscr.o mmpmtrx.o pesp.o rdopts.o prtconn.o readconn.o rms.o tensormm.o polchat.o 
 .PHONY: clean clobber
 
 polchat.exe: $(OBJECTS)

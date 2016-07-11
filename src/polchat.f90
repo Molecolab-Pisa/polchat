@@ -25,7 +25,7 @@ Program polchat
 !
 IMPLICIT REAL*8 (A-H,O-Z)
 DATA Ang2au,Deb2Au/1.889725989d0,0.393430201407683d0/
-CHARACTER(50) :: VERSION = "3.2.2a"
+CHARACTER(50) :: VERSION = "3.2.3"
 REAL*8, ALLOCATABLE :: CChg(:,:),CGrid(:,:),GESP(:),ChgESP(:),pol(:)
 REAL*8, ALLOCATABLE :: Vqm(:),X(:,:),B(:),RChg(:,:,:),D(:,:),R(:,:,:)
 REAL*8, ALLOCATABLE :: Rij(:,:,:),Rij3(:,:),RChGr(:,:,:), Qesp(:), Qpesp(:)
@@ -149,6 +149,16 @@ LOGICAL :: LScrChPl
   call FixedDip(IOut,IPrint,nch,CChg,Qpesp,DipFixPESP)
   DipPESP = DipFixPESP + DipIndPESP
 
+!
+! *******************************************************************
+! Print Gaussian-style connectivity
+!
+  call PrtConn(IOut,nch,LAnMMP,IAnMMP)
+
+!
+! *******************************************************************
+! Print rest of the output
+!
   write(IOut,6000)
   write(IOut,6020)
   do i = 1, nch
@@ -164,7 +174,7 @@ LOGICAL :: LScrChPl
   write(IOut,6070) DipIndPESP(1:3) !,DipIndOct(1:3)
   write(IOut,6080) DipFixIni(1:3),DipFixESP(1:3),DipPESP(1:3) !,DipOct(1:3)
     
- 6000 Format(' ESP charges:',/,14x,'ESP        pol-ESP') !    Comparison')
+ 6000 Format(/,' ESP charges:',/,14x,'ESP        pol-ESP') !    Comparison')
  6010 Format(1x,i6,3(1x,f12.6))
  6020 Format(' --------------------------------------')
  6030 Format(' Total  ',3(f12.6,1x))
@@ -357,7 +367,7 @@ Logical :: LDoDip
 1050 format(' > total dipole           > get from ESP     > ',3(f7.4,1x))
 1055 format(' > total dipole           > use QM dipole    > ',3(f7.4,1x))
 1060 format(' > total dipole           > no constraint')
-1080 format(' > restraint              > param    ',f7.5,' > atoms ',(15(1x,i4)))
+1080 format(' > restraint              > param    ',f7.4,' > atoms ',(15(1x,i4)))
 1070 format(/)
 1100 format(' ERROR IN FILE')
 1110 format(' RESTRAINT CANNOT BE NEGATIVE')

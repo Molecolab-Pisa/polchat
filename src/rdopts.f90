@@ -157,13 +157,14 @@ subroutine PrtHdr(IOut,VERSION)
      '       mMMMMMMMMMMMMMMMMm    |            P O L C H A T             | ',/,&
      '      mMMMMMMMMMMMMMMMMMm    + ------------------------------------ + ',/,&
      '      mMMMMm       mMMMMMm   | Stefano Caprasecca                   | ',/,&
-     '      mMMMm       mMMMMMMm   | Sandro Jurinovich                    | ',/,&
-     '       mMm       mMMMMMMm    | Carles Curutchet           ver ',A5,' | ',/,&
-     '        m       mMMMMMMm     |          www.dcci.unipi.it/molecolab | ',/,&
-     '               mMMMMMm       + ------------------------------------ + ',/,/,&
+     '      mMMMm       mMMMMMMm   | Carles Curutchet                     | ',/,&
+     '       mMm       mMMMMMMm    | Sandro Jurinovich                    | ',/,&
+     '        m       mMMMMMMm     | Benedetta Mennucci         ver ',A5,' | ',/,&
+     '               mMMMMMm       |          www.dcci.unipi.it/molecolab | ',/,&
+     '                             + ------------------------------------ + ',/,/,&
      '  Please cite this tool as: ',/, &
      '    PolChat: A polarisation-consistent charge fitting tool. ',/,&
-     '    S. Caprasecca, C. Curutchet, S. Jurinovich. ',/,&
+     '    S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci. ',/,&
      '    Molecolab Tools. 2014 www.dcci.unipi.it/molecolab/tools',/)
 
   write(IOut,1000),VERSION

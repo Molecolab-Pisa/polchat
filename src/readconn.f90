@@ -26,7 +26,8 @@ CHARACTER(LEN=50) :: fileconn,what
 1101 Format(I5,I6)
 1102 Format('ERROR: Number of atom in mol2 is ',I5,' expected number is ',I6)
 1103 Format(6X,2(I5))
-1104 Format(I5,'|',9(I5))
+1104 Format(I5,' | ',9(I5,1X))
+1105 Format(' Gaussian-style connectivity:')
 OPEN(unit=11,file=fileconn,status='unknown')
 !
 ! Skip the first two lines and read the number of atoms and number of 
@@ -80,11 +81,12 @@ DO N=1,nch
 ENDDO
 DEALLOCATE(ib1,ib2)
 
-if (IPrint.ge.2) then
- DO I=1,nch
-   WRITE(IOut,1104) I,(IAnMMP(I,J),J=1,LAnMMP)
- ENDDO
-endif
+IF (IPrint.ge.2) THEN
+  WRITE(IOut,1105) 
+  DO I=1,nch
+    WRITE(IOut,1104) I,(IAnMMP(I,J),J=1,LAnMMP)
+  ENDDO
+ENDIF
 
 RETURN
 End Subroutine
