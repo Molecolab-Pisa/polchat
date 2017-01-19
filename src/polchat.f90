@@ -25,7 +25,7 @@ Program polchat
 !
 IMPLICIT REAL*8 (A-H,O-Z)
 DATA Ang2au,Deb2Au/1.889725989d0,0.393430201407683d0/
-CHARACTER(50) :: VERSION = "3.2.3"
+CHARACTER(50) :: VERSION = "3.3.0"
 REAL*8, ALLOCATABLE :: CChg(:,:),CGrid(:,:),GESP(:),ChgESP(:),pol(:)
 REAL*8, ALLOCATABLE :: Vqm(:),X(:,:),B(:),RChg(:,:,:),D(:,:),R(:,:,:)
 REAL*8, ALLOCATABLE :: Rij(:,:,:),Rij3(:,:),RChGr(:,:,:), Qesp(:), Qpesp(:)
@@ -112,6 +112,12 @@ LOGICAL :: LScrChPl
   ALLOCATE(ScrChCh(nch,nch), ScrChPl(nch,nch))
   Call MkScr(IOut,IPrint,nch,CChg,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP, &
     LScrChPl)
+
+  if (IPrint.gt.1) then
+    call PrtMat(IOut,nch,nch,ScrChCh,'Screening chg-chg')
+    call PrtMat(IOut,nch,nch,ScrChPl,'Screening chg-pol')
+  endif
+    
 !
 ! *******************************************************************
 ! Compute, invert and store the MMPol matrix

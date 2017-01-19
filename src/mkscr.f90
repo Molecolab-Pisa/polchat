@@ -26,7 +26,7 @@ Subroutine MkScr(IOut,IPrint,NPol,CPol,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP,
   DIMENSION :: ScrChCh(npol,npol), ScrChPl(npol,npol), IAnMMP(npol,LAnMMP)
   DIMENSION :: CPol(3,*), R(3), Pol(NPol)
   INTEGER, ALLOCATABLE :: Neigh(:,:)
-  LOGICAL :: DoThole, LScrChPl
+  LOGICAL :: DoThole, LScrChPl, LN1213
   PARAMETER(a=1.7278d0,b=2.5874d0,c=2.0580d0)
 !
 ! > DoThole .... True if you want to use Thole
@@ -120,15 +120,16 @@ Subroutine MkScr(IOut,IPrint,NPol,CPol,Pol,ScrChCh,ScrChPl,IAnMMP,IMMPCn,LAnMMP,
     ScrChCh(i,i) = 0.0d0
     ScrChPl(i,i) = 0.0d0
     do j = i+1, npol
+      LN1213 = (Neigh(i,j) .eq. 2 .or. Neigh(i,j) .eq. 3)
       if (IMMPCn.eq.1.or.IMMPCn.eq.4) then
-        if (Neigh(i,j) .eq. 2 .or. Neigh(i,j) .eq. 3) then
+        if (LN1213) then
           ScrChCh(i,j) = 0.0d0
           ScrChCh(j,i) = 0.0d0
           ScrChPl(i,j) = 0.0d0
           ScrChPl(j,i) = 0.0d0
         endif
       endif
-      if (LScrChPl.AND.(IMMPCn.EQ.3.OR.IMMPCn.EQ.4.OR.IMMPCn.EQ.5)) THEN
+      if (LScrChPl.AND..NOT.LN1213.AND.(IMMPCn.EQ.3.OR.IMMPCn.EQ.4.OR.IMMPCn.EQ.5)) THEN
 !
 ! Compute the distance between two polarizable sites
 !
