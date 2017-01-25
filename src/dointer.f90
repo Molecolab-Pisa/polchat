@@ -22,8 +22,9 @@
 !
 Logical Function DoInter(I,J,IAnMMP,IMMPCn,npol)
 Implicit Real*8(A-H,O-Z)
-COMMON /OPTIONS/ LAnMMP
-DIMENSION :: IAnMMP(LAnMMP,*)
+
+Integer, Parameter :: LAnMMP = 9
+DIMENSION :: IAnMMP(npol,LAnMMP)
 !
 ! QM/MMPol connectivity check:
 ! Return whether an interaction between two sites has to be computed.
@@ -38,9 +39,9 @@ If(IMMPCn.eq.2.or.IMMPCn.eq.3) Then
   JinI = 0
   Do 50 K=1,LAnMMP
   ! Check if I-group is in J list
-    If (IAnMMP(1,I).eq.IAnMMP(K,J)) IinJ = 1
+    If (IAnMMP(I,1).eq.IAnMMP(J,K)) IinJ = 1
   ! Check if J-group is in I list
-    If (IAnMMP(K,I).eq.IAnMMP(1,J)) JinI = 1
+    If (IAnMMP(I,K).eq.IAnMMP(J,1)) JinI = 1
 50 Continue       
 If (IinJ.ne.JinI) Write(6,*) 'Inconsistency error in MultGroups information.'
 If (IinJ.eq.1) DoInter = .False.
@@ -49,14 +50,14 @@ If (IinJ.eq.1) DoInter = .False.
 !
 Else if(IMMPCn.eq.1.or.IMMPCn.eq.4) Then
   Do 20 K=1,LAnMMP
-  Neigh12 = IAnMMP(K,I)
+  Neigh12 = IAnMMP(I,K)
   If (Neigh12.eq.0) Goto 10
   If (Neigh12.eq.J) Then
     DoInter = .False.
     Goto 10
   Endif
   Do 30 L=1,LAnMMP
-    Neigh13 = IAnMMP(L,Neigh12)
+    Neigh13 = IAnMMP(Neigh12,L)
     If (Neigh13.eq.0) Goto 20
     If (Neigh13.eq.J) Then
       DoInter = .False.
