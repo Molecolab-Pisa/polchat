@@ -34,6 +34,9 @@ PARAMETER(LWORK=30000)
 LOGICAL   :: DoInter,DoThole,DoCalc
 DIMENSION :: pol(npol),CPol(3,npol),WORK(LWORK),IPIV(npol*3)
 DIMENSION :: D(3*npol,3*npol),IAnMMP(npol,LAnMMP)
+
+1000 format(' Dip-Dip interaction ',i5,1x,i5,1x,l1)
+
 LDA=npol*3
 
 !
@@ -88,6 +91,8 @@ DO I=1,npol
       Write(6,*) 'Confused in polarization treatment.'
       Stop
     EndIf
+
+    if (IPrint.ge.2) write(6,1000) I, J, DoCalc
 
     If (DoCalc) then
       D(I,J) = Tensormm(1,1,I,J,CPol,Pol,npol,DoThole,IScreen)
