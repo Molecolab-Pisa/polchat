@@ -30,6 +30,9 @@ Function FitErr(IOut,IPrint,LPol,nch,ngr,Q,RChGr,RChCh,R3,DInv,Scr,Vqm,DipInd)
     call chpotpol(nch,ngr,Q,DInv,Scr,RChGr,RChCh,R3,Vch,DipInd)
   else
     call chpot(nch,ngr,Q,RChGr,Vch)
+    if (IPrint.ge.2) call PrtMat(IOut,nch,1,Q,'ESP chg')
+    if (IPrint.ge.2) call PrtMat(IOut,ngr,nch,RChGr(4,:,:),'dist')
+    if (IPrint.ge.2) call PrtMat(IOut,ngr,1,Vch,'Chg potential')
   endif
   FitErr = rms(nch,Vqm,Vch)
   return
