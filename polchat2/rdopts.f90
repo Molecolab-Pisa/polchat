@@ -2,47 +2,35 @@ subroutine RdOpts
 !
 ! This subroutine reads input filenames and printout options from line
 !
-! Use the following options:
-!  -h ... Get help message
-!  -d ... Debug mode (extra printout)
-!  -s ... Silent mode (minimum printout)
-!  -g ... before gesp file name
-!  -m ... before mol2 file name
-!  -p ... before specifying polarizability file name
-!  -c ... before specifying constraint file name
-!  -x ... exclude chg-pol screening as in Wang
-!
-! Example: chpol d g xxx.gesp m xxx.mol2 p pol.in c cnstr.in
-!
-  ! DECLARATION
-
   use constants
   use mmpoldata
   use operative
+  use time
 
-  integer                                       :: iarg,narg,iget
-  character(len=100), dimension(:), allocatable :: args
+  integer                                             :: iarg,narg,iget
+  character(len=inpargmax), dimension(:), allocatable :: args
 
  1000 format(' Error in input stream: nothing followed option ',(A))
  1001 format(' Error in input stream: option ',(A),' unknown')
  1200 format(' Use the following options to run the program:',/,              &
-            '   -g  (required) ... Followed by gesp file name',/,              &
-            '   -m  (required) ... Followed by mol2 file name',/,              &
-            '   -p  (required) ... Followed by polarisability file name',/,    &
-            '   -c  (required) ... Followed by constraints file name',/,       &
-            '   -x  (optional) ... Do not include Wang Chg-Pol screening --',/,&
-            '                      Only use if the MMPol code does not include such screening. If in doubt, do not use.',/, &
-            '   -db (optional) ... Print database (followed by database file name)',/, &
-            '   -h  (optional) ... Get this help message',/,                &
-            '   -d  (optional) ... Run in debug mode (extra printout)',/,   &
-            '   -dd (optional) ... Run in extra debug mode (lots of printout)',/,&
-            '   -s  (optional) ... Run in silent mode (minimum printout)')
+            '   -g  --gesp     (required) ... Followed by gesp file name',/,              &
+            '   -m  --mol2     (required) ... Followed by mol2 file name',/,              &
+            '   -p  --pol      (required) ... Followed by polarisability file name',/,    &
+            '   -c  --constr   (required) ... Followed by constraints file name',/,       &
+            '   -x  --scrqp    (optional) ... Activate Wang Chg-Pol screening',/,&
+            '   -db --database (optional) ... Print database (followed by database file name)',/, &
+            '   -h  --help     (optional) ... Get this help message',/,                &
+            '   -v  --verbose  (optional) ... Run in debug mode (extra printout)',/,   &
+            '   -d  --debug    (optional) ... Run in extra debug mode (lots of printout)',/,&
+            '   -s  --silent   (optional) ... Run in silent mode (minimum printout)')
+
+  call starttime
 
   narg = command_argument_count()
   allocate(args(narg))
 
   iget = 0
-  iprt = 1
+  iprt = 0
   lscr = .false.
   ldbs = .false.
   filenam = ''
@@ -75,46 +63,66 @@ subroutine RdOpts
           filedbs = args(iarg)
       end select
       iget = 0
-    elseif (args(iarg) .eq. '-h') then
-      write(iout,1200)
-      stop
-    elseif (args(iarg) .eq. '-d') then
-      iprt = 1
-    elseif (args(iarg) .eq. '-dd') then
-      iprt = 2
-    elseif (args(iarg) .eq. '-s') then
-      iprt = -1
-    elseif (args(iarg) .eq. '-x') then
-      lscr = .true.
-    elseif (args(iarg) .eq. '-g') then
-      iget = 1
-      if (iarg .eq. narg) goto 800
-    elseif (args(iarg) .eq. '-m') then
-      iget = 2
-      if (iarg .eq. narg) goto 800
-    elseif (args(iarg) .eq. '-p') then
-      iget = 3
-      if (iarg .eq. narg) goto 800
-    elseif (args(iarg) .eq. '-c') then
-      iget = 4
-      if (iarg .eq. narg) goto 800
-    elseif (args(iarg) .eq. '-db') then
-      ldbs = .true.
-      iget = 5
-      if (iarg .eq. narg) goto 800
     else
-      goto 801
+      select case (args(iarg))
+        case ('-h')
+          write(iout,1200)
+          stop
+        case ('--help')
+          write(iout,1200)
+          stop
+        case ('-s')
+          iprt = -1
+        case ('--silent')
+          iprt = -1
+        case ('-v')
+          iprt = 1
+        case ('--verbose')
+          iprt = 1
+        case ('-d')
+          iprt = 2
+        case ('--debug')
+          iprt = 2
+        case ('-x')
+          lscr = .true.
+        case ('--scrqp')
+          lscr = .true.
+        case ('-g')
+          iget = 1
+        case ('--gesp')
+          iget = 1
+        case ('-m')
+          iget = 2
+        case ('--mol2')
+          iget = 2
+        case ('-p')
+          iget = 3
+        case ('--pol')
+          iget = 3
+        case ('-c')
+          iget = 4
+        case ('--constr')
+          iget = 4
+        case ('-db')
+          ldbs = .true.
+          iget = 5
+        case ('--database')
+          ldbs = .true.
+          iget = 5
+        case default
+          write(iout,1001) trim(args(iarg))
+          stop
+      end select
+      if (iget.ne.0 .and. iarg.eq.narg) then
+        write(iout,1000) trim(args(iarg-1))
+        stop
+      endif
     endif
   enddo
 
-  goto 802 
+  call gettime('')
+  if (iprt.ge.1) call prttime('reading arguments')
 
- 800 write(iout,1000) args(iarg-1)
-  stop
-
- 801 write(iout,1001) args(iarg)
-  stop
-
- 802 return
+  return
 
 end subroutine

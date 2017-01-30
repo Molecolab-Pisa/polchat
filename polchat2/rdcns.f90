@@ -5,11 +5,12 @@ subroutine RdCns
   use strings
   use constraints
   use operative
+  use time
 
   implicit real(a-h,o-z)
 
   integer                                :: VCns(NChg)
-  character*1                            :: del
+  character*1                            :: space
   character(len=strmax)                  :: line,select
   character(len=strmax), dimension(NChg) :: args
  
@@ -41,32 +42,34 @@ subroutine RdCns
   NCEqv = 0
   NCRes = 0
   NCons = 0
-  del = ' '
+  space = ' '
 
   if (iprt .gt. 1) write(iout,2000)
   open(unit=12,file=filecns,status='unknown')
   rewind(12)
 
+  call starttime
+
 ! First time just count number of constraints
 
   do while(.true.)
     read(12,'(A)',END=8000) line
-    call parse(trim(line),del,args,nargs)
+    call parse(trim(line),space,args,nargs)
     select = uppercase(trim(args(1)))
-    if (trim(select) .eq. 'CHG') then
+    if (trim(select) .eq. 'CHG' .or. trim(select) .eq. 'CHARGE') then
       NCChg = NCChg + 1
       NCons = NCons+ 1
-      if (iprt.ge.2) write(iout,9100) 'CHG',1,NCons
-    elseif (trim(select) .eq. 'FRG') then
+      if (iprt.ge.1) write(iout,9100) 'CHG',1,NCons
+    elseif (trim(select) .eq. 'FRG' .or. trim(select) .eq. 'FRAGMENT') then
       NCFrg = NCFrg + 1
       NCons = NCons+ 1
-      if (iprt.ge.2) write(iout,9100) 'FRG',1,NCons
-    elseif (trim(select) .eq. 'EQV') then
+      if (iprt.ge.1) write(iout,9100) 'FRG',1,NCons
+    elseif (trim(select) .eq. 'EQV' .or. trim(select) .eq. 'EQUIVALENCE') then
       call rdrange(args(2),VCns,N)
       NCEqv = NCEqv + 1
       NCons = NCons + N - 1
-      if (iprt.ge.2) write(iout,9100) 'EQV',N-1,NCons
-    elseif (trim(select) .eq. 'RES') then
+      if (iprt.ge.1) write(iout,9100) 'EQV',N-1,NCons
+    elseif (trim(select) .eq. 'RES' .or. trim(select) .eq. 'RESTRAINT') then
       NCRes = NCRes + 1
     else
       write(iout,9000) trim(select)
@@ -74,11 +77,11 @@ subroutine RdCns
     endif
   enddo
 
-  if (iprt.ge.2) then
+  if (iprt.ge.1) then
     write(iout,9110) NChg,NCons,NChg+NCons
     write(iout,9120) NCChg,NCFrg,NCEqv,NCRes
   endif
-  
+
 ! Consistency check
 
  8000 continue
@@ -91,6 +94,8 @@ subroutine RdCns
     stop
   endif
 
+  call gettime('first reading')
+  
 ! Allocate constraints
 
   allocate ( RCFrg(NCFrg), ICFrg(NCFrg), VCFrg(NCFrg,NChg) )
@@ -106,26 +111,23 @@ subroutine RdCns
   do while(.true.)
     read(12,'(A)',END=900) line
     if (iprt.ge.2) write(iout,9200) trim(line)
-    call parse(trim(line),del,args,nargs)
+    call parse(trim(line),space,args,nargs)
     select = uppercase(trim(args(1)))
 
-    if (trim(select) .eq. 'CHG') then
+    if (trim(select) .eq. 'CHG' .or. trim(select) .eq. 'CHARGE') then
       read(args(2),*) RCChg
-      if (iprt.ge.1) write(iout,2010) RCChg
+      if (iprt.ge.2) write(iout,2010) RCChg
 
-    elseif (trim(select) .eq. 'FRG') then
+    elseif (trim(select) .eq. 'FRG' .or. trim(select) .eq. 'FRAGMENT') then
       NCFrg = NCFrg + 1
       read(args(2),*) RCns
       call rdrange(args(3),VCns,N)
       RCFrg(NCFrg) = RCns
       ICFrg(NCFrg) = N
       VCFrg(NCFrg,1:N) = VCns(1:N)
-!     do i = 1, N
-!       VCFrg(NCFrg,i) = VCns(i)
-!     enddo
-      if (iprt.ge.1) write(iout,2020) RCns,(VCns(j),j=1,N)
+      if (iprt.ge.2) write(iout,2020) RCns,(VCns(j),j=1,N)
 
-    elseif (trim(select) .eq. 'EQV') then
+    elseif (trim(select) .eq. 'EQV' .or. trim(select) .eq. 'EQUIVALENCE') then
       NCEqv = NCEqv + 1
       call rdrange(args(2),VCns,N)
       ICEqv(NCEqv) = N
@@ -133,9 +135,9 @@ subroutine RdCns
 !     do i = 1, N
 !       VCEqv(NCEqv,i) = VCns(i)
 !     enddo
-      if (iprt.ge.1) write(iout,2030) (VCns(j),j=1,N)
+      if (iprt.ge.2) write(iout,2030) (VCns(j),j=1,N)
 
-    elseif (trim(select) .eq. 'RES') then
+    elseif (trim(select) .eq. 'RES' .or. trim(select) .eq. 'RESTRAINT') then
       read(args(2),*) RCns
       read(args(3),*) ICns
       call rdrange(args(4),VCns,N)
@@ -146,7 +148,7 @@ subroutine RdCns
         write(iout,9040) ICns
         stop
       endif
-      if (iprt.ge.1) write(iout,2040) RCns,ICns,(VCns(j),j=1,N)
+      if (iprt.ge.2) write(iout,2040) RCns,ICns,(VCns(j),j=1,N)
       ICRes = ICns
       RCRes = RCns
       MCRes = N
@@ -157,5 +159,9 @@ subroutine RdCns
  900 continue
 
   close(12)
+
+  call gettime('second reading and allocation')
+
+  if (iprt.ge.1) call prttime('reading constraint file')
 
 end subroutine

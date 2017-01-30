@@ -5,6 +5,7 @@ subroutine pesp
   use gespinfo
   use constraints
   use espinfo
+  use time
 
   implicit real*8(a-h,o-z)
   integer, allocatable :: IPIV(:)
@@ -16,6 +17,7 @@ subroutine pesp
  2010 format(' PESP charges computed.')
  2020 format(' Sum of PESP charges: ',f12.6)
  2030 format(' Fit error of PESP charges: ',f12.6)
+ 2100 format(' Fitting pol-ESP charges.')
  9000 format(' ERROR',/,&
              ' PESP matrix: Element ',i6,' has an illegal value.')
  9010 format(' ERROR',/,&
@@ -24,10 +26,15 @@ subroutine pesp
 
 ! For definition and notation, please refer to documentation
 
+  if (iprt.ge.0) write(iout,2100)
+  call starttime
+
 ! Allocation
 
   allocate(Ax(NGrd,NChg), BxPol(3*NChg,NChg), BxGrd(NGrd,3*NChg), Cx(3*NChg,NChg))
   allocate(Ex(NGrd,NChg), Fx(NGrd,NChg), Gx(NChg,NChg), Hx(NChg))
+
+  call gettime('allocating')
 
 ! Matrix Ax
 
@@ -92,6 +99,8 @@ subroutine pesp
 
   B(1:NChg) = Hx
 
+  call gettime('forming matrices')
+
 ! Initialise elements
 
   NDim = NChg+NCons
@@ -110,16 +119,18 @@ subroutine pesp
   elseif ( INFO .gt. 0 ) then
     write(iout,9010) INFO
     stop
-  elseif (iprt.ge.2) then
+  elseif (iprt.ge.1) then
     write(iout,2000)
   endif
+
+  call gettime('matrix inversion')
     
 ! Compute PESP charges and fit error
 
   allocate (qpesp(NChg))
   qpesp = matmul(X,B)
   spesp = sum(qpesp)
-  epesp = error(.true.)
+  epesp = error(.true.,qpesp)
   call dipole(NChg,qpesp,CChg,dqpesp)
   dtpesp = dqpesp + ddpesp
 
@@ -132,6 +143,9 @@ subroutine pesp
 
   deallocate(IPIV,WORK)
   deallocate(X,B)
+
+  call gettime('solving for charges and computing fit errors')
+  if (iprt.ge.1) call prttime('computing pol-ESP charges')
 
   return
 

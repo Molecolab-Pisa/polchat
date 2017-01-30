@@ -1,4 +1,4 @@
-real*8 function error(lpol)
+real*8 function error(lpol,charges)
 
   use constants
   use mmpoldata
@@ -8,7 +8,7 @@ real*8 function error(lpol)
   implicit real*8 (a-h,o-z)
 
   logical :: lpol
-  real*8  :: V(NGrd)
+  real*8  :: V(NGrd), charges(NChg)
 
  2000 format(' PESP: Computing fit error.')
  2010 format(' ESP:  Computing fit error.')
@@ -17,10 +17,10 @@ real*8 function error(lpol)
 
   if (lpol) then
     if (iprt.ge.2) write(iout,2000)
-    call potchgdip(NGrd,NChg,Rij,Rij3,RChGr,D,scrcp,qpesp,V,ddpesp)
+    call potchgdip(NGrd,NChg,Rij,Rij3,RChGr,D,scrcp,charges,V,ddpesp)
   else
     if (iprt.ge.2) write(iout,2010)
-    call potchg(NGrd,NChg,qesp,RChGr(4,:,:),V)
+    call potchg(NGrd,NChg,charges,RChGr(4,:,:),V)
   endif
 
 ! Compute fit error

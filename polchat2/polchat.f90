@@ -20,8 +20,10 @@
 !
 program polchat
 
-  use constants
-  use mmpoldata
+  use time
+
+! Initialise timer
+  call inittime
 
 ! Print header
   call PrtHdr

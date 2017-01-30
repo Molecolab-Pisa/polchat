@@ -3,15 +3,24 @@ subroutine MkScr
   use constants
   use mmpoldata
   use gespinfo
+  use time
  
   implicit real*8 (a-h,o-z)
 
   logical :: LN1213
 
+ 2000 format(' SCR: Sites ',i5,',',i5,' are 1-2/1-3 neighb.; scr c-c: ',f6.3,', scr c-p: ',f6.3)
+ 2010 format(' SCR: Sites ',i5,',',i5,' are not close;       scr c-c: ',f6.3,', scr c-p: ',f6.3,'; dist: ',f8.2,' au, s=',f5.2)
+ 2020 format(' SCR: Sites ',i5,',',i5,' are not close;       scr c-c: ',f6.3,', scr c-p: ',f6.3,'; (screening not active)') 
+ 2100 format(' Computing chg-chg and chg-dip screening.')
  9000 format(' ERROR',/,&
              ' Mismatch in type of polarisation scheme.')
  9010 format(' ERROR',/,&
              ' Code does not deal with groups option yet.')
+
+  call starttime
+
+  if (iprt.gt.0) write(iout,2100)
 
   if (lscr) then
     select case (IMMPCn)
@@ -71,15 +80,33 @@ subroutine MkScr
         write(iout,9010)
         stop
       endif
+
+      if (iprt.ge.2) then
+        if (LN1213) then
+          write(iout,2000) i,j,scrcc(i,j),scrcp(i,j)
+        else
+          if (lscr) then 
+            write(iout,2010) i,j,scrcc(i,j),scrcp(i,j),dist,s
+          else
+            write(iout,2020) i,j,scrcc(i,j),scrcp(i,j)
+          endif
+        endif
+      endif
+
     enddo
   enddo
 
+  call gettime('computing screenings')
+
 ! Printout
 
-  if (iprt .gt. 1) then
+  if (iprt .gt. 2) then
     call PrtMat(iout,NChg,NChg,scrcc,' Charge-charge screening',.false.)
     call PrtMat(iout,NChg,NChg,scrcp,' Charge-dipole screening',.false.)
+    call gettime('debug printout')
   endif
+
+  if (iprt.ge.1) call prttime('computing screenings')
 
   return
 

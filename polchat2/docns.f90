@@ -4,8 +4,11 @@ subroutine DoCns
   use mmpoldata
   use strings
   use constraints
+  use time
 
   implicit real(a-h,o-z)
+
+  call starttime
 
 ! Allocate X and B vectors
 
@@ -49,6 +52,9 @@ subroutine DoCns
   enddo
 
 ! 4. RES does not add constraints
+
+  call gettime('')
+  if (iprt.ge.1) call prttime('building constraint matrices')
 
   return
  

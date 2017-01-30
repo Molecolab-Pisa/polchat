@@ -30,6 +30,12 @@ subroutine PrtDat
  1430 format(  '   > equivalence                   > atoms ',10(i6,1x),(44x,10(i6,1x)))
  1440 format(  '   > restraint                     > type ',i1,' > alpha ',f8.4,/,&
                '                                   > atoms ',10(i6,1x),(44x,10(i6,1x)))
+ 1500 format(/,' Gaussian-style connectivity following:')
+ 1510 format(1x,i5,1x,'|',9(1x,i5))
+
+  if (iprt.lt.0) return
+
+! Print working parameters
 
   write(iout,1000) 
   write(iout,1010) NChg,NGrd
@@ -67,6 +73,15 @@ subroutine PrtDat
   enddo
   if (NCRes.ne.0) then
     write(iout,1440) ICRes, RCRes, (VCRes(j), j=1,MCRes)
+  endif
+
+! Print connectivity
+
+  if (iprt.ge.0) then
+    write(iout,1500)
+    do i = 1, NChg
+      write(iout,1510) i, (IAnMMP(i,j), j=1,LAnMMP)
+    enddo
   endif
 
   return

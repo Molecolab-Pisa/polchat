@@ -5,6 +5,7 @@ subroutine esp
   use gespinfo
   use constraints
   use espinfo
+  use time
 
   implicit real*8(a-h,o-z)
   integer, allocatable :: IPIV(:)
@@ -14,12 +15,15 @@ subroutine esp
  2010 format(' ESP charges computed.')
  2020 format(' Sum of ESP charges: ',f12.6)
  2030 format(' Fit error of ESP charges: ',f12.6)
+ 2100 format(' Fitting ESP charges.')
  9000 format(' ERROR',/,&
              ' ESP matrix: Element ',i6,' has an illegal value.')
  9010 format(' ERROR',/,&
              ' ESP matrix: Diagonal element ',i6,' is zero.',/,&
              '             The matrix is singular and cannot be inverted.')
 
+  if (iprt.ge.1) write(iout,2100)
+  call starttime
 ! Complete matrices X and B
 
   do k = 1, NChg
@@ -45,6 +49,8 @@ subroutine esp
     enddo
   endif
 
+  call gettime('forming matrices')
+
 ! Initialise elements
 
   NDim = NChg+NCons
@@ -63,9 +69,11 @@ subroutine esp
   elseif ( INFO .gt. 0 ) then
     write(iout,9010) INFO
     stop
-  elseif (iprt.ge.2) then
+  elseif (iprt.ge.1) then
     write(iout,2000)
   endif
+
+  call gettime('matrix inversion')
     
 ! Compute ESP charges and fit error
 
@@ -73,7 +81,8 @@ subroutine esp
   qesp = matmul(X,B)
   sesp = sum(qesp)
   sini = sum(gesp)
-  eesp = error(.false.)
+  eesp = error(.false.,qesp)
+  egesp = error(.false.,gesp)
   call dipole(NChg,qesp,CChg,desp)
   call dipole(NChg,gesp,CChg,dini)
   if (iprt.ge.2) write(iout,2010)
@@ -83,6 +92,9 @@ subroutine esp
 
   deallocate(IPIV,WORK)
   deallocate(X,B)
+
+  call gettime('solving for charges and computing fit errors')
+  if (iprt.ge.1) call prttime('computing ESP charges')
 
   return
 

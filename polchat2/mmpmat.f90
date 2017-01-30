@@ -2,6 +2,8 @@ subroutine MMPMat
 
   use constants
   use mmpoldata
+  use time
+
   implicit real*8(a-h,o-z)
 
   logical            :: DoCalc, DoInter
@@ -13,6 +15,7 @@ subroutine MMPMat
  205 format(' MM sites ',i5,1x,i5,' neighb. ',i1,' inteaction ',l1)
 
   if (iprt.ge.1) write(iout,200)
+  call starttime
 
 ! Clear matrix
  
@@ -62,7 +65,12 @@ subroutine MMPMat
     enddo
   enddo
 
-  if (iprt.gt.1) call PrtMat(iout,3*NChg,3*NChg,D,'MMPol matrix before inversion',.false.)
+  call gettime('Forming matrix')
+
+  if (iprt.gt.2) then
+    call PrtMat(iout,3*NChg,3*NChg,D,'MMPol matrix before inversion',.false.)
+    call gettime('Debug printing 1')
+  endif
 
 ! Invert the MMPol matrix using lapac library
 
@@ -70,8 +78,14 @@ subroutine MMPMat
   call DGETRF(3*NChg,3*NChg,D,LDA,IPIV,info)
   call DGETRI(3*NChg,D,LDA,IPIV,work,lwork,info)
 
+  call gettime('Inverting matrix')
   
-  if (iprt.gt.1) call PrtMat(iout,3*NChg,3*NChg,D,'MMPol matrix after inversion',.false.)
+  if (iprt.gt.2) then
+    call PrtMat(iout,3*NChg,3*NChg,D,'MMPol matrix after inversion',.false.)
+    call gettime('Debug printing 2')
+  endif
+
+  if (iprt.ge.1) call prttime('forming and inverting MMPol matrix')
 
   return
 
