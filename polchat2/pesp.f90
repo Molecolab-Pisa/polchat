@@ -22,7 +22,7 @@ subroutine pesp
              ' PESP matrix: Element ',i6,' has an illegal value.')
  9010 format(' ERROR',/,&
              ' PESP matrix: Diagonal element ',i6,' is zero.',/,&
-             '             The matrix is singular and cannot be inverted.')
+             '              The matrix is singular and cannot be inverted.')
 
 ! For definition and notation, please refer to documentation
 
@@ -87,7 +87,7 @@ subroutine pesp
  
   X(1:NChg,1:NChg) = Gx
 
-! Restraints
+! Add restraints
 
   if (NCRes.ne.0 .and. RCRes.gt.small) then
     do k = 1, MCRes

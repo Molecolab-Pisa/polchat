@@ -24,6 +24,7 @@ subroutine esp
 
   if (iprt.ge.1) write(iout,2100)
   call starttime
+
 ! Complete matrices X and B
 
   do k = 1, NChg
@@ -51,15 +52,22 @@ subroutine esp
 
   call gettime('forming matrices')
 
-! Initialise elements
-
   NDim = NChg+NCons
+
+  if (iprt.ge.2) then
+    call prtmat(iout,NDim,NDim,X,'X after constraints',.false.)
+    call prtmat(iout,NDim,1,B,'B after constraints',.false.)
+    call gettime('debug printout')
+  endif
+
+! Initialise
+
   LWORK = NDim**2
   allocate (IPIV(NDim), WORK(LWORK))
-    
+  
 ! Invert X
 
-  INFO = 0
+  INFO = 0 
   call DGETRF(NDim,NDim,X,NDim,IPIV,INFO)
   call DGETRI(NDim,X,NDim,IPIV,WORK,LWORK,INFO)
 
@@ -79,6 +87,7 @@ subroutine esp
 
   allocate (qesp(NChg))
   qesp = matmul(X,B)
+
   sesp = sum(qesp)
   sini = sum(gesp)
   eesp = error(.false.,qesp)
