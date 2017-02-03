@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! espinfo.f90:     A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,13 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+module espinfo
 
-  use constants
+  implicit none
 
-  implicit real*8(a-h,o-z)
+  real*8, allocatable :: qESP(:), qpesp(:)
+  real*8              :: eESP, ePESP
+  real*8              :: sini, sESP, sPESP
+  real*8              :: dini(3), dESP(3), dqPESP(3), ddPESP(3), dtPESP(3)
 
-  dimension QRef(N), Q(N)
-
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
-  enddo
-
-  return
-
-end function
+end module

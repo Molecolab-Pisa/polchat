@@ -40,7 +40,7 @@ all:
 endif
 
 
-OBJECTS = constants.o mmpoldata.o constraints.o precmod.o stringmod.o gespinfo.o espinfo.o operative.o time.o dist.o prthdr.o prtmat.o prtimat.o rdopts.o rdgesp.o rdconn.o rdpol.o tensor.o mkscr.o mmpmat.o dointer.o rdcns.o docns.o rdrange.o esp.o pesp.o error.o potchg.o potchgdip.o rms.o dipole.o prtdat.o printout.o atnum.o polchat.o 
+OBJECTS = prtmat.o chpot.o chpotpol.o dist.o dointer.o esp.o fiterr.o fixeddip.o mkdvdq.o mkrij.o mkscr.o mmpmtrx.o pesp.o rdopts.o prtconn.o readconn.o rms.o tensormm.o polchat.o 
 .PHONY: clean clobber
 
 polchat.exe: $(OBJECTS)
@@ -50,7 +50,7 @@ polchat.exe: $(OBJECTS)
 	$(FC) $(FFLAGS) -c $<
 
 clean: 
-	rm -f $(OBJECTS) *.mod polchat.exe
+	rm -f $(OBJECTS) polchat.exe
 
 clobber:
 	rm -f $(OBJECTS) polchat.exe

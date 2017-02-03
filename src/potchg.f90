@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! potchg.f90:      A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,24 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+subroutine potchg(ng,nq,q,R,V)
 
   use constants
 
   implicit real*8(a-h,o-z)
 
-  dimension QRef(N), Q(N)
+  real*8 :: q(nq), R(ng,nq), V(ng)
 
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
+  do i = 1, ng
+    V(i) = zero
+    do j = 1, nq
+      V(i) = V(i) + q(j)/R(i,j)
+    enddo
   enddo
+
+  if (iprt.ge.2) call PrtMat(iout,ng,1,V,'ESP potential',.false.)
 
   return
 
-end function
+end subroutine
+

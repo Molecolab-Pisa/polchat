@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! rdpol.f90:       A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,33 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+subroutine RdPol
 
   use constants
+  use mmpoldata
+  use operative
+  use time
 
-  implicit real*8(a-h,o-z)
+  implicit real(a-h,o-z)
 
-  dimension QRef(N), Q(N)
+ 2000 format(' Reading polarisability file.')
 
-  rms = zero
+  call starttime 
 
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
+  if (iprt .gt. 1) write(iout,2000)
+  open(unit=12,file=filepol,status='unknown')
+
+! Read polarisabilities
+  do i = 1, NChg
+    read(12,*) pol(i)
   enddo
+  close(12)
+
+! Printout
+  if (iprt .ge. 2) call PrtMat(iout,NChg,1,pol,'Polarisabilities',.false.)
+  
+  call gettime('')
+  if (iprt.ge.1) call prttime('reading pol file')
 
   return
-
-end function
+end subroutine

@@ -1,7 +1,7 @@
-! RdOpts.f90: A Polarisation consistent charge-fitting tool 
-!             A Molecolab Tool www.dcci.unipi.it/molecolab/tools
+! rdopts.f90:      A Polarisation consistent charge-fitting tool 
+!                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
-! Copyright (C) 2014, 2015 
+! Copyright (C) 2014, 2015, 2016, 2017
 !   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -17,156 +17,131 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-Subroutine RdOpts(IOut,IPrint,filename,fileconn,filepol,filecnst,LScrChPl)
+subroutine RdOpts
 !
 ! This subroutine reads input filenames and printout options from line
 !
-! Use the following options:
-!  -h ... Get help message
-!  -d ... Debug mode (extra printout)
-!  -s ... Silent mode (minimum printout)
-!  -g ... before gesp file name
-!  -m ... before mol2 file name
-!  -p ... before specifying polarizability file name
-!  -c ... before specifying constraint file name
-!  -x ... include chg-pol screening as in Wang (experts only)
-!
-! Example: chpol d g xxx.gesp m xxx.mol2 p pol.in c cnstr.in
-!
-  integer IOut,IPrint,IArg,num_args
-  logical LScrChPl
-  CHARACTER(LEN=50) filename,filepol,fileconn,filecnst
-  character(len=50), dimension(:), allocatable :: args
+  use constants
+  use mmpoldata
+  use operative
+  use time
 
-1000 format(' Error in input stream: nothing followed option ',(A))
-1001 format(' Error in input stream: option ',(A),' unknown')
-1002 format(' Error in input stream: not all files have been defined.',/, &
-            '   Use g m p c to define all files.')
-1200 format(' Use the following options to run the program:',/,            &
-            '   -g (required) ... Followed by gesp file name',/,           &
-            '   -m (required) ... Followed by mol2 file name',/,           &
-            '   -p (required) ... Followed by polarisability file name',/, &
-            '   -c (required) ... Followed by constraints file name',/,    &
-            '   -x (optional) ... Also include Wang Chg-Pol screening -- WARNING: Expert use only.',/,             &
-            '                     Only use if the MMPol code includes such screening. If in doubt, do not use.',/, &
-            '   -h (optional) ... Get this help message',/,                &
-            '   -d (optional) ... Run in debug mode (extra printout)',/,   &
-            '   -s (optional) ... Run in silent mode (minimum printout)')
+  integer                                             :: iarg,narg,iget
+  character(len=inpargmax), dimension(:), allocatable :: args
 
-  num_args = command_argument_count()
-  allocate(args(num_args))  
+ 1000 format(' Error in input stream: nothing followed option ',(A))
+ 1001 format(' Error in input stream: option ',(A),' unknown')
+ 1200 format(' Use the following options to run the program:',/,              &
+            '   -g  --gesp     (required) ... Followed by gesp file name',/,              &
+            '   -m  --mol2     (required) ... Followed by mol2 file name',/,              &
+            '   -p  --pol      (required) ... Followed by polarisability file name',/,    &
+            '   -c  --constr   (required) ... Followed by constraints file name',/,       &
+            '   -x  --screen   (optional) ... Activate Wang Chg-Pol screening',/,&
+            '   -db --database (optional) ... Print database (followed by database file name)',/, &
+            '   -h  --help     (optional) ... Get this help message',/,                &
+            '   -v  --verbose  (optional) ... Run in debug mode (extra printout)',/,   &
+            '   -d  --debug    (optional) ... Run in extra debug mode (lots of printout)',/,&
+            '   -s  --silent   (optional) ... Run in silent mode (minimum printout)')
 
-  IPrint   = 1
-  IGet     = 0
-  LScrChPl = .FALSE.
-  filename = ''
-  fileconn = ''
-  filepol  = ''
-  filecnst = ''
+  call starttime
 
-  if (num_args.eq.0) then
+  narg = command_argument_count()
+  allocate(args(narg))
+
+  iget = 0
+  iprt = 0
+  lscr = .false.
+  ldbs = .false.
+  filenam = ''
+  filecon = ''
+  filepol = ''
+  filecns = ''
+  filedbs = ''
+
+  if (narg.eq.0) then
     write(IOut,1200)
     stop
   endif
-  do IArg = 1, num_args
-    call get_command_argument(IArg,args(IArg))
-  end do
-  do IArg = 1, num_args
-    if (IGet.ne.0) then
-      if (IGet.eq.1) then
-        filename = args(IArg)
-      elseif(IGet.eq.2) then
-        fileconn = args(IArg)
-      elseif(IGet.eq.3) then
-        filepol = args(IArg)
-      elseif(IGet.eq.4) then
-        filecnst = args(IArg)
-      endif
-      IGet = 0
-    elseif (args(IArg).eq.'-h') then
-      write(IOut,1200)
-      stop
-    elseif (args(IArg).eq.'-d') then
-      IPrint = 2
-    elseif (args(IArg).eq.'-s') then
-      IPrint = 0
-    elseif (args(IArg).eq.'-x') then
-      LScrChPl = .TRUE.
-    elseif (args(IArg).eq.'-g') then
-      IGet = 1
-      if (IArg.eq.num_args) goto 800
-    elseif (args(IArg).eq.'-m') then
-      IGet = 2
-      if (IArg.eq.num_args) goto 800
-    elseif (args(IArg).eq.'-p') then
-      IGet = 3
-      if (IArg.eq.num_args) goto 800
-    elseif (args(IArg).eq.'-c') then
-      IGet = 4
-      if (IArg.eq.num_args) goto 800
+
+  do iarg = 1, narg
+    call get_command_argument(iarg,args(iarg))
+  enddo
+
+  do iarg = 1, narg
+    if (iget.ne.0) then
+      select case (iget)
+        case (1) 
+          filenam = args(iarg)
+        case (2)
+          filecon = args(iarg)
+        case (3)
+          filepol = args(iarg)
+        case (4)
+          filecns = args(iarg)
+        case (5) 
+          filedbs = args(iarg)
+      end select
+      iget = 0
     else
-      goto 801
+      select case (args(iarg))
+        case ('-h')
+          write(iout,1200)
+          stop
+        case ('--help')
+          write(iout,1200)
+          stop
+        case ('-s')
+          iprt = -1
+        case ('--silent')
+          iprt = -1
+        case ('-v')
+          iprt = 1
+        case ('--verbose')
+          iprt = 1
+        case ('-d')
+          iprt = 2
+        case ('--debug')
+          iprt = 2
+        case ('-x')
+          lscr = .true.
+        case ('--screen')
+          lscr = .true.
+        case ('-g')
+          iget = 1
+        case ('--gesp')
+          iget = 1
+        case ('-m')
+          iget = 2
+        case ('--mol2')
+          iget = 2
+        case ('-p')
+          iget = 3
+        case ('--pol')
+          iget = 3
+        case ('-c')
+          iget = 4
+        case ('--constr')
+          iget = 4
+        case ('-db')
+          ldbs = .true.
+          iget = 5
+        case ('--database')
+          ldbs = .true.
+          iget = 5
+        case default
+          write(iout,1001) trim(args(iarg))
+          stop
+      end select
+      if (iget.ne.0 .and. iarg.eq.narg) then
+        write(iout,1000) trim(args(iarg-1))
+        stop
+      endif
     endif
   enddo
 
-!  if (filename.eq.''.or.fileconn.eq.''.or.filepol.eq.''.or.filecnst.eq.'') goto 802 
-  goto 900
+  call gettime('')
+  if (iprt.ge.1) call prttime('reading arguments')
 
-800 write(IOut,1000) args(IArg-1)
-  stop
-
-801 write(IOut,1001) args(IArg)
-  write(*,*) IArg
-  stop
- 
-802 write(IOut,1002)
-  stop
- 
-900 return
-
-end subroutine
-  
-subroutine PrtHdr(IOut,VERSION)
-  integer IOut
-  character*50 :: Version
-!
-! Print header
-!
-1000 FORMAT(/,                                                                  &
-     '                                                                      ',/,&
-     '                                       mm                             ',/,&
-     '                                    mMMm                              ',/,&
-     '                                  mMMMMm         m                    ',/,&
-     '                                 mMMMMm          mMm                  ',/,&
-     '                                 mMMMMm          mMm                  ',/,&
-     '                                 mMMMMMm        mMMm                  ',/,&
-     '                                 MMMMMMMMMMMMMMMMMMm                  ',/,&
-     '                                mMMMMMMMMMMMMMMMMMm                   ',/,&
-     '       __  ___      __    ____________      __MMMm     __             ',/,&
-     '      /  |/  /___  / /   / ____/ ____/___  / /  ____ _/ /_            ',/,&
-     '     / /|_/ / __ \/ /   / __/ / /   / __ \/ /  / __ `/ __ \           ',/,&
-     '    / /  / / /_/ / /___/ /___/ /___/ /_/ / /__/ /_/ / /_/ /           ',/,&
-     '   /_/  /_/\__________/_____/\____/_____/_____|__,_/_.___/            ',/,&
-     '           /_  __/ __ \/ __ \/ /  / ___/                              ',/,&
-     '            / / / / / / / / / /   \__ \                               ',/,&
-     '           / / / /_/ / /_/ / /___ __/ /                               ',/,&
-     '          /_/  \____/\____/_____/____/                                ',/,&
-     '            mMMMMMMMMMMMMMMMm                                         ',/,&
-     '          mMMMMMMMMMMMMMMMm                                           ',/,&
-     '        mMMMMMMMMMMMMMMMMM   + ------------------------------------ + ',/,&
-     '       mMMMMMMMMMMMMMMMMm    |            P O L C H A T             | ',/,&
-     '      mMMMMMMMMMMMMMMMMMm    + ------------------------------------ + ',/,&
-     '      mMMMMm       mMMMMMm   | Stefano Caprasecca                   | ',/,&
-     '      mMMMm       mMMMMMMm   | Carles Curutchet                     | ',/,&
-     '       mMm       mMMMMMMm    | Sandro Jurinovich                    | ',/,&
-     '        m       mMMMMMMm     | Benedetta Mennucci         ver ',A5,' | ',/,&
-     '               mMMMMMm       |          www.dcci.unipi.it/molecolab | ',/,&
-     '                             + ------------------------------------ + ',/,/,&
-     '  Please cite this tool as: ',/, &
-     '    PolChat: A polarisation-consistent charge fitting tool. ',/,&
-     '    S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci. ',/,&
-     '    Molecolab Tools. 2014 www.dcci.unipi.it/molecolab/tools',/)
-
-  write(IOut,1000),VERSION
   return
+
 end subroutine

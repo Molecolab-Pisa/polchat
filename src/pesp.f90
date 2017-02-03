@@ -1,7 +1,7 @@
-! PESP.f90: A Polarisation consistent charge-fitting tool 
-!           A Molecolab Tool www.dcci.unipi.it/molecolab/tools
+! pesp.f90:        A Polarisation consistent charge-fitting tool 
+!                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
-! Copyright (C) 2014, 2015 
+! Copyright (C) 2014, 2015, 2016, 2017
 !   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -17,134 +17,155 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-!
-! -------------------------------------------------------------------
-!
-Subroutine PESP(IOut,IPrint,npol,ngr,mcon,RChGr,Rij,Rij3,Vqm,X,B,ScrChPl,ScrChCh,DInv,Qpesp,QSum,restr,irestr,nrestr)
-  Implicit Real*8 (A-H,O-Z)
-  Dimension RChGr(4,ngr,npol), Vqm(ngr), X(npol+mcon,npol+mcon), B(npol+mcon)
-  Dimension Rij(4,npol,npol), Rij3(npol,npol)
-  Dimension Qpesp(npol+mcon), ScrChPl(npol,npol), ScrChCh(npol,npol)
-  Dimension dVdQ(ngr,npol),dEdQ(3*npol,npol),dMudQ(3*npol,npol),DInv(3*npol,3*npol)
-  Dimension RTemp(ngr,3*npol),dVdQChg(ngr,npol),dVdQPol(ngr,npol), E(npol,npol), irestr(nrestr)
-  Integer, Allocatable :: IPIV(:)
-  Real*8, Allocatable  :: WORK(:)
-  Real*8, Allocatable  :: Ax(:,:),BxPol(:,:),BxGrd(:,:),Cx(:,:),Ex(:,:),Fx(:,:),Gx(:,:),Hx(:)
-  Parameter (One = 1.0d0, Small = 1.0d-10)
- 1000 Format(' polESP matrix: Element ',i6,' has an illegal value',/,' Halting.')
- 1010 Format(' polESP matrix: Diagonal element ',i6,' is zero.',/, &
-             ' The matrix is singular and cannot be inverted',/,   &
-             ' If you have a symmetric molecule and you are imposing a dipole',/,&
-             '   constraint,  then  you  may be asking for linearly dependent',/,&
-             '   conditions.    Please remove constraint on dipole and see if',/,&
-             '   it works. Otherwise contact the author.---------------------',/, &
-             ' Halting now.')
- 1020 Format(' polESP matrix: Inversion successful.')
- 1100 Format(' polESP charges:')
- 1110 Format(1x,i6,1x,f12.6)
- 1120 Format(' --------------------',/,' Total  ',f12.6)
-!
-! For definitions and notation, please refer to document by S.Caprasecca
-!
-  Allocate(Ax(ngr,npol), BxPol(3*npol,npol), BxGrd(ngr,3*npol), Cx(3*npol,npol))
-  Allocate(Ex(ngr,npol), Fx(ngr,npol), Gx(npol,npol), Hx(npol))
-! --- Matrix Ax
-  Ax = One/RChGr(4,:,:)
-! --- Sanitise Rij3
-  do i = 1, npol
-    do j = 1, npol
-      if (Rij3(i,j).lt.Small) Rij3(i,j)=Small
+subroutine pesp
+
+  use constants
+  use mmpoldata
+  use gespinfo
+  use constraints
+  use espinfo
+  use time
+
+  implicit real*8(a-h,o-z)
+  integer, allocatable :: IPIV(:)
+  real*8,  allocatable :: WORK(:)
+  real*8, allocatable  :: Ax(:,:), BxPol(:,:), BxGrd(:,:), Cx(:,:), Ex(:,:)
+  real*8, allocatable  :: Fx(:,:), Gx(:,:), Hx(:)
+
+ 2000 format(' PESP matrix: Inversion successful.')
+ 2010 format(' PESP charges computed.')
+ 2020 format(' Sum of PESP charges: ',f12.6)
+ 2030 format(' Fit error of PESP charges: ',f12.6)
+ 2100 format(' Fitting pol-ESP charges.')
+ 9000 format(' ERROR',/,&
+             ' PESP matrix: Element ',i6,' has an illegal value.')
+ 9010 format(' ERROR',/,&
+             ' PESP matrix: Diagonal element ',i6,' is zero.',/,&
+             '              The matrix is singular and cannot be inverted.')
+
+! For definition and notation, please refer to documentation
+
+  if (iprt.ge.0) write(iout,2100)
+  call starttime
+
+! Allocation
+
+  allocate(Ax(NGrd,NChg), BxPol(3*NChg,NChg), BxGrd(NGrd,3*NChg), Cx(3*NChg,NChg))
+  allocate(Ex(NGrd,NChg), Fx(NGrd,NChg), Gx(NChg,NChg), Hx(NChg))
+
+  call gettime('allocating')
+
+! Matrix Ax
+
+  Ax = one/RChGr(4,:,:)
+
+! Sanitise Rij3
+
+  do i = 1, NChg
+    do j = i, NChg
+      if (Rij3(i,j).lt.small) then
+        Rij3(i,j) = small
+        Rij3(j,i) = small
+      endif
     enddo
   enddo
-! --- Matrix BxPol
-  BxPol(1:npol,:)          = Rij(1,:,:)*(ScrChPl/(Rij3))
-  BxPol(npol+1:2*npol,:)   = Rij(2,:,:)*(ScrChPl/(Rij3))
-  BxPol(2*npol+1:3*npol,:) = Rij(3,:,:)*(ScrChPl/(Rij3))
-! --- Matrix BxGrd
-  BxGrd(:,1:npol)          = RChGr(1,:,:)/(RChGr(4,:,:)**3)
-  BxGrd(:,npol+1:2*npol)   = RChGr(2,:,:)/(RChGr(4,:,:)**3)
-  BxGrd(:,2*npol+1:3*npol) = RChGr(3,:,:)/(RChGr(4,:,:)**3)
-! --- Matrix Cx
-  Cx = Matmul(DInv,BxPol)
-! --- Matrix Ex
-  Ex = Matmul(BxGrd,Cx)
-! --- Matrix Fx
+
+! Matrix BxPol
+
+  BxPol(1:NChg,:)          = Rij(1,:,:)*(scrcp/(Rij3))
+  BxPol(NChg+1:2*NChg,:)   = Rij(2,:,:)*(scrcp/(Rij3))
+  BxPol(2*NChg+1:3*NChg,:) = Rij(3,:,:)*(scrcp/(Rij3))
+
+! Matrix BxGrd
+ 
+  BxGrd(:,1:NChg)          = RChGr(1,:,:)/(RChGr(4,:,:)**3)
+  BxGrd(:,NChg+1:2*NChg)   = RChGr(2,:,:)/(RChGr(4,:,:)**3)
+  BxGrd(:,2*NChg+1:3*NChg) = RChGr(3,:,:)/(RChGr(4,:,:)**3)
+
+! Matrix Cx
+
+  Cx = matmul(D,BxPol)
+
+! Matrix Ex
+
+  Ex = matmul(BxGrd,Cx)
+
+! Matrix Fx
+
   Fx = Ax + Ex
-! --- Matrix Gx
-  Gx = Matmul(Transpose(Fx),Fx)
-! --- Vector Hx
-  Hx = Matmul(Transpose(Fx),Vqm)
-! --- Matrix X
-  X(1:npol,1:npol) = Gx
-! --- Restraints
-  if (restr.gt.1.0d-08) then
-    do k = 1, nrestr
-      X(irestr(k),irestr(k)) = X(irestr(k),irestr(k)) + restr
+
+! Matrix Gx
+
+  Gx = matmul(transpose(Fx),Fx)
+
+! Vector Hx
+
+  Hx = matmul(transpose(Fx),VQM)
+
+! Matrix X
+ 
+  X(1:NChg,1:NChg) = Gx
+
+! Add restraints
+
+  if (NCRes.ne.0 .and. RCRes.gt.small) then
+    do k = 1, MCRes
+      X(VCRes(k),VCRes(k)) = X(VCRes(k),VCRes(k)) + RCRes
     enddo
   endif
-! --- Vector B
-  B(1:npol) = Hx
-!---   
-!---   
-!---     Rij3 = Rij3 + 1.0d-10
-!---   ! Form matrix dVdQ (Chg)
-!---     dVdQChg = 1.0d0/RChGr(4,:,:)
-!---   ! Form matrix dEdQ
-!---     do i = 1, npol
-!---       do j = 1, npol
-!---         dEdQ(i,j) = ScrChPl(i,j)*Rij(1,i,j)/(Rij3(i,j))
-!---         dEdQ(npol+i,j) = ScrChPl(i,j)*Rij(2,i,j)/(Rij3(i,j))
-!---         dEdQ(2*npol+i,j) = ScrChPl(i,j)*Rij(3,i,j)/(Rij3(i,j))
-!---       enddo
-!---     enddo
-!---   ! Form matrix dMudQ
-!---     dMudQ = matmul(DInv,dEdQ)
-!---   ! Form matrix dVdQ (Pol)
-!---     RTemp(:,1:npol) = RChGr(1,:,:)
-!---     RTemp(:,npol+1:2*npol) = RChGr(2,:,:)
-!---     RTemp(:,2*npol+1:3*npol) = RChGr(3,:,:)
-!---     dVdQPol = matmul(RTemp,dMudQ)
-!---   ! Form matrix dVdQ (Tot)
-!---     dVdQ = dVdQChg-dVdQPol
-!---   ! Form matrix X
-!---     X(1:npol,1:npol) = matmul(transpose(dVdQ),dVdQ)
-!---   ! Form vector B
-!---     B(1:npol) = matmul(transpose(dVdQ),Vqm)
-! Invert matrix X
-! Solve system to find ESP charges: 
-!  (-) initialise elements
-  LWORK = (npol+mcon)*(npol+mcon)
-  allocate (IPIV(npol+mcon),WORK(LWORK))
-  
-!  (-) invert matrix X
 
-  M = npol+mcon
+! Vector B
+
+  B(1:NChg) = Hx
+
+  call gettime('forming matrices')
+
+! Initialise elements
+
+  NDim = NChg+NCons
+  LWORK = NDim**2
+  allocate (IPIV(NDim), WORK(LWORK))
+
+! Invert X
+
   INFO = 0
-  Call DGETRF(M,M,X,M,IPIV,INFO)
-  Call DGETRI(M,X,M,IPIV,WORK,LWORK,INFO)
+  call DGETRF(NDim,NDim,X,NDim,IPIV,INFO)
+  call DGETRI(NDim,X,NDim,IPIV,WORK,LWORK,INFO)
 
-  if (INFO .lt. 0) then
-    write(IOut,1000) abs(INFO)
+  if ( INFO .lt. 0 ) then
+    write(iout,9000) abs(INFO)
     stop
-  elseif (INFO .gt. 0) then
-    write(IOut,1010) INFO
-  elseif (IPrint.ge.2) then
-    write(IOut,1020)
+  elseif ( INFO .gt. 0 ) then
+    write(iout,9010) INFO
+    stop
+  elseif (iprt.ge.1) then
+    write(iout,2000)
   endif
 
-!   (-) Compute charges
+  call gettime('matrix inversion')
+    
+! Compute PESP charges and fit error
 
-  qpESP = matmul(X,B)
+  allocate (qpesp(NChg))
+  qpesp = matmul(X,B)
+  spesp = sum(qpesp)
+  epesp = error(.true.,qpesp)
+  call dipole(NChg,qpesp,CChg,dqpesp)
+  dtpesp = dqpesp + ddpesp
 
-  if (IPrint.ge.2) write(IOut,1100)
-  qSum = 0.d0
-  do i = 1, npol
-    qSum = qSum + qpESP(i)
-    if (IPrint.ge.2) write(IOut,1110) i,qpESP(i)
-  enddo
-  if (IPrint.ge.2) write(IOut,1120) qSum
+  if (iprt.ge.2) then
+    write(iout,2010)
+    call PrtMat(iout,NChg,1,qpesp,'PESP charges',.false.)
+    write(iout,2020) spesp
+    write(iout,2030) epesp
+  endif
 
- Deallocate(IPIV,WORK)
+  deallocate(IPIV,WORK)
+  deallocate(X,B)
 
-  Return
-End Subroutine
+  call gettime('solving for charges and computing fit errors')
+  if (iprt.ge.1) call prttime('computing pol-ESP charges')
+
+  return
+
+end subroutine

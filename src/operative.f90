@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! operative.f90:   A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,12 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+module operative
 
-  use constants
+  implicit none
 
-  implicit real*8(a-h,o-z)
+  logical                     :: ldbs
+  integer,parameter           :: maxlenfilnam=200
+  character(len=maxlenfilnam) :: filenam,filecon,filepol,filecns,filedbs
 
-  dimension QRef(N), Q(N)
-
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
-  enddo
-
-  return
-
-end function
+end module

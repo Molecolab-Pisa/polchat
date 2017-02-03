@@ -1,7 +1,7 @@
-! DoInter.f90: A Polarisation consistent charge-fitting tool 
-!              A Molecolab Tool www.dcci.unipi.it/molecolab/tools
+! dointer.f90:     A Polarisation consistent charge-fitting tool 
+!                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
-! Copyright (C) 2014, 2015 
+! Copyright (C) 2014, 2015, 2016, 2017
 !   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -17,56 +17,40 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-!--------------------------------------------------------------------
-! Function to decide if two dipole should interact or not
-!
-Logical Function DoInter(I,J,IAnMMP,IMMPCn,npol)
-Implicit Real*8(A-H,O-Z)
+logical function DoInter(i,j)
 
-Integer, Parameter :: LAnMMP = 9
-DIMENSION :: IAnMMP(npol,LAnMMP)
-!
-! QM/MMPol connectivity check:
-! Return whether an interaction between two sites has to be computed.
-!
-DoInter = .True.
-!   
-! Check if sites belong to same group or to a corresponding excluded group: 
-! Groups option.
-! 
-If(IMMPCn.eq.2.or.IMMPCn.eq.3) Then
-  IinJ = 0
-  JinI = 0
-  Do 50 K=1,LAnMMP
-  ! Check if I-group is in J list
-    If (IAnMMP(I,1).eq.IAnMMP(J,K)) IinJ = 1
-  ! Check if J-group is in I list
-    If (IAnMMP(I,K).eq.IAnMMP(J,1)) JinI = 1
-50 Continue       
-If (IinJ.ne.JinI) Write(6,*) 'Inconsistency error in MultGroups information.'
-If (IinJ.eq.1) DoInter = .False.
-!
-!     Check if sites are 1-2 or 1-3 neighbours: Amber and Wang option
-!
-Else if(IMMPCn.eq.1.or.IMMPCn.eq.4) Then
-  Do 20 K=1,LAnMMP
-  Neigh12 = IAnMMP(I,K)
-  If (Neigh12.eq.0) Goto 10
-  If (Neigh12.eq.J) Then
-    DoInter = .False.
-    Goto 10
-  Endif
-  Do 30 L=1,LAnMMP
-    Neigh13 = IAnMMP(Neigh12,L)
-    If (Neigh13.eq.0) Goto 20
-    If (Neigh13.eq.J) Then
-      DoInter = .False.
-      Goto 10
-    Endif
+  use constants
+  use mmpoldata
 
-30  Continue
-20  Continue
-10  Endif
+  implicit real*8(a-h,o-z)
+  logical ll
 
-Return
-End Function
+ 9000 format(' ERROR',/,&
+             ' Possible mismatch in connectivity matrix.')
+
+  DoInter = .true.
+
+! Groups option
+  if (IMMPCn.eq.2.or.IMMPCn.eq.3) then
+    IinJ = 0
+    JinI = 0
+    do k = 1, LAnMMP
+      if (IAnMMP(1,i).eq.IAnMMP(k,j)) IinJ = 1
+      if (IAnMMP(k,i).eq.IAnMMP(1,j)) JinI = 1
+    enddo
+    if (IinJ.ne.JinI) then
+      write(iout,9000)
+      stop
+    elseif (IinJ.eq.1) then
+      DoInter = .false.
+    endif
+
+! 1-2, 1-3 neighbour
+  elseif (IMMPCn.eq.1.or.IMMPCn.eq.4) then
+    if (neigh(i,j) .le. 3 .and. neigh(i,j) .ge. 1) DoInter = .false.
+  endif
+
+  return
+
+end function
+

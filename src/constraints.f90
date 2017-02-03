@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! constraints.f90  A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,16 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+module constraints
 
-  use constants
+  implicit none
 
-  implicit real*8(a-h,o-z)
+  integer              :: NCons, NCChg, NCFrg, NCEqv, NCRes
+  integer              :: ICRes, MCRes
+  integer, allocatable :: ICFrg(:), ICEqv(:), VCFrg(:,:), VCEqv(:,:), VCRes(:)
+  real*8               :: RCChg, RCRes
+  real*8, allocatable  :: RCFrg(:)
 
-  dimension QRef(N), Q(N)
+  real*8, allocatable  :: X(:,:), B(:)
 
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
-  enddo
-
-  return
-
-end function
+end module

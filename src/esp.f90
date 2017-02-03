@@ -1,7 +1,7 @@
-! ESP.f90: A Polarisation consistent charge-fitting tool 
-!          A Molecolab Tool www.dcci.unipi.it/molecolab/tools
+! esp.f90:         A Polarisation consistent charge-fitting tool 
+!                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
-! Copyright (C) 2014, 2015 
+! Copyright (C) 2014, 2015, 2016, 2017
 !   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -17,81 +17,113 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-!
-! -------------------------------------------------------------------
-!
-Subroutine ESP(IOut,IPrint,npol,ngr,mcon,RChGr,Vqm,X,B,Qesp,QSum,restr,irestr,nrestr)
-  Implicit Real*8 (A-H,O-Z)
-  Dimension RChGr(4,ngr,npol), Vqm(ngr), X(npol+mcon,npol+mcon), B(npol+mcon)
-  Dimension Qesp(npol+mcon), irestr(nrestr)
-  Integer, Allocatable :: IPIV(:)
-  Real*8, Allocatable  :: WORK(:)
- 1000 Format(' ESP matrix: Element ',i6,' has an illegal value',/,' Halting.')
- 1010 Format(' ESP matrix: Diagonal element ',i6,' is zero.',/, &
-             ' The matrix is singular and cannot be inverted',/,' Halting.')
- 1020 Format(' ESP matrix: Inversion successful.')
- 1100 Format(' ESP charges:')
- 1110 Format(1x,i6,1x,f12.6)
- 1120 Format(' --------------------',/,' Total  ',f12.6)
+subroutine esp
 
-! Complete matrices X and B (constraints already done)
+  use constants
+  use mmpoldata
+  use gespinfo
+  use constraints
+  use espinfo
+  use time
 
-  do k = 1, npol
-    bb = 0.0d0
-    do i = 1, ngr
-      bb = bb + Vqm(i)/RChGr(4,i,k)
+  implicit real*8(a-h,o-z)
+  integer, allocatable :: IPIV(:)
+  real*8,  allocatable :: WORK(:)
+
+ 2000 format(' ESP matrix: Inversion successful.')
+ 2010 format(' ESP charges computed.')
+ 2020 format(' Sum of ESP charges: ',f12.6)
+ 2030 format(' Fit error of ESP charges: ',f12.6)
+ 2100 format(' Fitting ESP charges.')
+ 9000 format(' ERROR',/,&
+             ' ESP matrix: Element ',i6,' has an illegal value.')
+ 9010 format(' ERROR',/,&
+             ' ESP matrix: Diagonal element ',i6,' is zero.',/,&
+             '             The matrix is singular and cannot be inverted.')
+
+  if (iprt.ge.1) write(iout,2100)
+  call starttime
+
+! Complete matrices X and B
+
+  do k = 1, NChg
+    bb = zero
+    do i = 1, NGrd
+      bb = bb + VQM(i)/RChGr(4,i,k)
     enddo
     B(k) = bb
-    do j = 1, npol
-      xx = 0.0d0
-      do i = 1, ngr
-        xx = xx + 1.0d0/(RChGr(4,i,j)*RChGr(4,i,k))
+    do j = 1, NChg
+      xx = zero
+      do i = 1, NGrd
+        xx = xx + one/(RChGr(4,i,j)*RChGr(4,i,k))
       enddo
       X(j,k) = xx
     enddo
   enddo
 
-! Add restraints if needed
-  if (restr.gt.1.0d-08) then
-    do k = 1, nrestr
-      X(irestr(k),irestr(k)) = X(irestr(k),irestr(k)) + restr
+! Add restraints
+
+  if (NCRes.ne.0 .and. RCRes.gt.small) then
+    do k = 1, MCRes
+      X(VCRes(k),VCRes(k)) = X(VCRes(k),VCRes(k)) + RCRes
     enddo
   endif
-! Solve system to find ESP charges: 
-!  (-) initialise elements
 
-  LWORK = (npol+mcon)*(npol+mcon)
-  allocate (IPIV(npol+mcon),WORK(LWORK))
-  
-!  (-) invert matrix X
+  call gettime('forming matrices')
 
-  M = npol+mcon
-  Call DGETRF(M,M,X,M,IPIV,INFO)
-  Call DGETRI(M,X,M,IPIV,WORK,LWORK,INFO)
+  NDim = NChg+NCons
 
-  if (INFO .lt. 0) then
-    write(IOut,1000) abs(INFO)
-    stop
-  elseif (INFO .gt. 0) then
-    write(IOut,1010) INFO
-    stop
-  elseif (IPrint.ge.2) then
-    write(IOut,1020)
+  if (iprt.ge.2) then
+    call prtmat(iout,NDim,NDim,X,'X after constraints',.false.)
+    call prtmat(iout,NDim,1,B,'B after constraints',.false.)
+    call gettime('debug printout')
   endif
 
-!   (-) Compute charges
+! Initialise
 
-  qESP = matmul(X,B)
+  LWORK = NDim**2
+  allocate (IPIV(NDim), WORK(LWORK))
+  
+! Invert X
 
-  if (IPrint.ge.2) write(IOut,1100)
-  qSum = 0.d0
-  do i = 1, npol
-    qSum = qSum + qESP(i)
-    if (IPrint.ge.2) write(IOut,1110) i,qESP(i)
-  enddo
-  if (IPrint.ge.2) write(IOut,1120) qSum
+  INFO = 0 
+  call DGETRF(NDim,NDim,X,NDim,IPIV,INFO)
+  call DGETRI(NDim,X,NDim,IPIV,WORK,LWORK,INFO)
 
- Deallocate(IPIV,WORK)
+  if ( INFO .lt. 0 ) then
+    write(iout,9000) abs(INFO)
+    stop
+  elseif ( INFO .gt. 0 ) then
+    write(iout,9010) INFO
+    stop
+  elseif (iprt.ge.1) then
+    write(iout,2000)
+  endif
 
-  Return
-End Subroutine
+  call gettime('matrix inversion')
+    
+! Compute ESP charges and fit error
+
+  allocate (qesp(NChg))
+  qesp = matmul(X,B)
+
+  sesp = sum(qesp)
+  sini = sum(gesp)
+  eesp = error(.false.,qesp)
+  egesp = error(.false.,gesp)
+  call dipole(NChg,qesp,CChg,desp)
+  call dipole(NChg,gesp,CChg,dini)
+  if (iprt.ge.2) write(iout,2010)
+  if (iprt.ge.2) call PrtMat(iout,NChg,1,qesp,'ESP charges',.false.)
+  if (iprt.ge.2) write(iout,2020) sesp
+  if (iprt.ge.2) write(iout,2030) eesp
+
+  deallocate(IPIV,WORK)
+  deallocate(X,B)
+
+  call gettime('solving for charges and computing fit errors')
+  if (iprt.ge.1) call prttime('computing ESP charges')
+
+  return
+
+end subroutine

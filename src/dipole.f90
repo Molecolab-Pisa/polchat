@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! dipole.f90       A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,21 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+subroutine dipole(nq,q,cq,dip)
 
   use constants
 
   implicit real*8(a-h,o-z)
+  
+  real*8 :: q(nq), cq(3,nq), dip(3)
 
-  dimension QRef(N), Q(N)
-
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
+  dip = zero
+  do i = 1, nq
+    dip(1) = dip(1) + q(i)*cq(1,i)
+    dip(2) = dip(2) + q(i)*cq(2,i)
+    dip(3) = dip(3) + q(i)*cq(3,i)
   enddo
 
   return
 
-end function
+end subroutine

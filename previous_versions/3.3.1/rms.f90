@@ -1,7 +1,7 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
-!                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
+! rms.f90: A Polarisation consistent charge-fitting tool 
+!          A Molecolab Tool www.dcci.unipi.it/molecolab/tools
 !
-! Copyright (C) 2014, 2015, 2016, 2017
+! Copyright (C) 2014, 2015 
 !   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -17,20 +17,16 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
-
-  use constants
-
-  implicit real*8(a-h,o-z)
-
-  dimension QRef(N), Q(N)
-
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
-  enddo
-
-  return
-
-end function
+!
+! -------------------------------------------------------------------
+!     Compute the RMS between two quantities 
+!
+REAL*8 Function rms(n,QRef,Qvar)
+implicit real*8 (A-H,O-Z)
+dimension Qref(n),Qvar(n)
+rms = 0.0d0
+Do I=1,n
+  rms = rms + (Qref(I)-Qvar(I))**2
+Enddo
+return 
+End Function

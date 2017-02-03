@@ -1,4 +1,4 @@
-! rms.f90:         A Polarisation consistent charge-fitting tool 
+! mmpoldata.f90:   A Polarisation consistent charge-fitting tool 
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
@@ -17,20 +17,18 @@
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
 !
-real*8 function rms(N,QRef,Q)
+module mmpoldata
 
-  use constants
+  use constants 
 
-  implicit real*8(a-h,o-z)
+  implicit none
 
-  dimension QRef(N), Q(N)
+  logical                            :: lscr, DoThole
+  integer                            :: NChg, IScreen
+  integer, allocatable               :: IAnMMP(:,:), neigh(:,:)
+  real*8, allocatable                :: pol(:), scrcc(:,:), scrcp(:,:)
+  real*8, allocatable                :: CChg(:,:), Rij(:,:,:), Rij3(:,:)
+  real*8, allocatable                :: D(:,:)
+  character(len=typmax), allocatable :: atmnam(:), atmtyp(:), moltyp(:)
 
-  rms = zero
-
-  do i = 1, N
-    rms = rms + (QRef(i)-Q(i))**2
-  enddo
-
-  return
-
-end function
+end module

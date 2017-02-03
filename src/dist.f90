@@ -1,7 +1,7 @@
-! dist.f90: A Polarisation consistent charge-fitting tool 
-!           A Molecolab Tool www.dcci.unipi.it/molecolab/tools
+! dist.f90:        A Polarisation consistent charge-fitting tool 
+!                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
-! Copyright (C) 2014, 2015 
+! Copyright (C) 2014, 2015, 2016, 2017
 !   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,6 @@
 !
 ! A copy of the GNU General Public License can be found in LICENSE or at
 !   <http://www.gnu.org/licenses/>.
-!
-!--------------------------------------------------------------------
-!     Subroutine to compute the distances between the gridpoint and
-!     the atoms.
-!     If symmetric, also compute R^3
 !
 Subroutine dist(nch,ngr,LSymm,CChg,CGrd,R,R3)
   IMPLICIT REAL*8 (A-H,O-Z)
