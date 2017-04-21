@@ -69,7 +69,6 @@ subroutine printout
     if (iprt.ge.0) write(iout,2000) 
     open(unit=16,file=filedbs,status='unknown')
     do i = 1, NChg
-      write(6,*) moltyp(i),atmtyp(i),qesp(i),qpesp(i),pol(i),atnum(atmnam(i))
       write(16,3000) moltyp(i),atmtyp(i),qesp(i),qpesp(i),pol(i),atnum(atmnam(i))
     enddo
     close(16)

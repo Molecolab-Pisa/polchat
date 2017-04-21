@@ -133,7 +133,7 @@ subroutine RdOpts
           stop
       end select
       if (iget.ne.0 .and. iarg.eq.narg) then
-        write(iout,1000) trim(args(iarg-1))
+        write(iout,1000) trim(args(iarg))
         stop
       endif
     endif
