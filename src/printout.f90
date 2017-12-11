@@ -44,6 +44,8 @@ subroutine printout
  2000 format(' Writing database.')
  2010 format(' Database written.')
  3000 format(1x,(A),1x,(A),2(f12.6,1x),f8.4,1x,i3)
+ 4000 format(' Gaussian-style input:')
+ 4010 format(1x,i3,1x,3(f10.5,1x),2(f8.4,1x),i3,1x,9(1x,i5))
 
 ! Print GESP, ESP and pol-ESP to standard output
 
@@ -63,7 +65,7 @@ subroutine printout
   write(iout,1053) dipqm(3), dini(3), desp(3), dqpesp(3), ddpesp(3), dtpesp(3)
   write(iout,1054) 
   
-! If required, print database
+! If required, print database and Gaussian-style input
 
   if (ldbs) then
     if (iprt.ge.0) write(iout,2000) 
@@ -73,7 +75,15 @@ subroutine printout
     enddo
     close(16)
     if (iprt.ge.1) write(iout,2010) 
+    write(iout,4000)
+    do i = 1, NChg
+      write(iout,4010) 1, (CChg(ii,i), ii=1,3), qpesp(i), pol(i), atnum(atmnam(i)), (IAnMMP(i,ii), ii=1,LAnMMP)
+    enddo
+  
   endif
+
+! Print MMPol input
+
   
   return
 
