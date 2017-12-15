@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ subroutine RdConn
 
 ! If rbase requested, read atom and molecule types 
 
-    elseif (what .eq. '@<TRIPOS>ATOM' .and. ldbs) then
+    elseif (what .eq. '@<TRIPOS>ATOM' .and. (ldbs.or.lgau)) then
       if (.not.donemol) then
         write(iout,9040)
         stop
@@ -121,7 +121,7 @@ subroutine RdConn
   elseif (.not.donecon) then
     write(iout,9060)
     stop
-  elseif (ldbs .and. .not.doneatm) then
+  elseif ((ldbs.or.lgau) .and. .not.doneatm) then
     write(iout,9070)
     stop
   endif

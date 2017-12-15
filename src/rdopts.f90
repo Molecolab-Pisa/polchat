@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ subroutine RdOpts
   use constants
   use mmpoldata
   use operative
+  use strings
   use time
 
   integer                                             :: iarg,narg,iget
@@ -31,6 +32,7 @@ subroutine RdOpts
 
  1000 format(' Error in input stream: nothing followed option ',(A))
  1001 format(' Error in input stream: option ',(A),' unknown')
+ 1002 format(' Error in input stream: connectivity shift ',(A),' mysterious')
  1200 format(' Use the following options to run the program:',/,              &
             '   -g  --gesp     (required) ... Followed by gesp file name',/,              &
             '   -m  --mol2     (required) ... Followed by mol2 file name',/,              &
@@ -38,6 +40,7 @@ subroutine RdOpts
             '   -c  --constr   (required) ... Followed by constraints file name',/,       &
             '   -x  --screen   (optional) ... Activate Wang Chg-Pol screening',/,&
             '   -db --database (optional) ... Print database (followed by database file name)',/, &
+            '   -gi --gaussian (optional) ... Print gaussian input in log file',/,&
             '   -h  --help     (optional) ... Get this help message',/,                &
             '   -v  --verbose  (optional) ... Run in debug mode (extra printout)',/,   &
             '   -d  --debug    (optional) ... Run in extra debug mode (lots of printout)',/,&
@@ -52,11 +55,13 @@ subroutine RdOpts
   iprt = 0
   lscr = .false.
   ldbs = .false.
+  lgau = .false.
   filenam = ''
   filecon = ''
   filepol = ''
   filecns = ''
   filedbs = ''
+  shiftc  = 0
 
   if (narg.eq.0) then
     write(IOut,1200)
@@ -80,6 +85,12 @@ subroutine RdOpts
           filecns = args(iarg)
         case (5) 
           filedbs = args(iarg)
+        case (6) 
+          call value(trim(args(iarg)),shiftc,ios)
+          if (ios1.ne.0) then
+            write(iout,1002) trim(args(iarg))
+            stop
+          endif
       end select
       iget = 0
     else
@@ -128,6 +139,12 @@ subroutine RdOpts
         case ('--database')
           ldbs = .true.
           iget = 5
+        case ('-gi')
+          lgau = .true.
+          iget = 6
+        case ('--gaussian')
+          lgau = .true.
+          iget = 6
         case default
           write(iout,1001) trim(args(iarg))
           stop

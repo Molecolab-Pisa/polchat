@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -42,18 +42,18 @@ subroutine PrtHdr
      '          /_/  \____/\____/_____/____/                                     ',/,&
      '            mMMMMMMMMMMMMMMMm                                              ',/,&
      '          mMMMMMMMMMMMMMMMm                                                ',/,&
-     '        mMMMMMMMMMMMMMMMMM   + ------------------------------------ +      ',/,&
-     '       mMMMMMMMMMMMMMMMMm    |            P O L C H A T             |      ',/,&
-     '      mMMMMMMMMMMMMMMMMMm    + ------------------------------------ +      ',/,&
-     '      mMMMMm       mMMMMMm   | Stefano Caprasecca                   |      ',/,&
-     '      mMMMm       mMMMMMMm   | Carles Curutchet                     |      ',/,&
-     '       mMm       mMMMMMMm    | Sandro Jurinovich                    |      ',/,&
+     '        mMMMMMMMMMMMMMMMMM                                                 ',/,&
+     '       mMMMMMMMMMMMMMMMMm    + ------------------------------------ +      ',/,&
+     '      mMMMMMMMMMMMMMMMMMm    |            P O L C H A T             |      ',/,&
+     '      mMMMMm       mMMMMMm   + ------------------------------------ +      ',/,&
+     '      mMMMm       mMMMMMMm   | Stefano Caprasecca                   |      ',/,&
+     '       mMm       mMMMMMMm    | Carles Curutchet                     |      ',/,&
      '        m       mMMMMMMm     | Benedetta Mennucci         ver ',A5,' |     ',/,&
      '               mMMMMMm       |          www.molecolab.dcci.unipi.it |     ',/,&
      '                             + ------------------------------------ +      ',/,/,&
      '  Please cite this tool as: ',/, &
      '    PolChat: A polarisation-consistent charge fitting tool. ',/,&
-     '    S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci. ',/,&
+     '    S. Caprasecca, C. Curutchet, B. Mennucci. ',/,&
      '    Molecolab Tools. 2014 www.molecolab.dcci.unipi.it/tools',/)
 
   write(IOut,1000) Version

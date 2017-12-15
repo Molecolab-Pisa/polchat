@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -37,11 +37,13 @@ subroutine PrtDat
  1200 format(/,' CHARGE-DIPOLE SCREENING -----------------------------------')
  1210 format(  '                                   > ON')
  1220 format(  '                                   > OFF')
- 1300 format(/,' PRINTOUT LEVEL --------------------------------------------')
- 1310 format(  '                                   > -1 (silent)')
- 1320 format(  '                                   >  0 (default)')
- 1330 format(  '                                   >  1 (debug)')
- 1340 format(  '                                   >  2 (super-debug)')
+ 1300 format(/,' PRINTING --------------------------------------------------')
+ 1310 format(  '                                   > level -1 (silent)')
+ 1320 format(  '                                   > level  0 (default)')
+ 1330 format(  '                                   > level  1 (debug)')
+ 1340 format(  '                                   > level  2 (super-debug)')
+ 1350 format(  '                                   > Print gaussian input in log')
+ 1360 format(  '                                   > Connectivity shift ',i8)
  1400 format(/,' CONSTRAINTS -----------------------------------------------')
  1410 format(  '   > whole molecule                > charge ',f9.4)
  1420 format(  '   > fragment                      > charge ',f9.4,/,&
@@ -81,6 +83,10 @@ subroutine PrtDat
     case (2)
       write(iout,1340) 
   end select
+  if (lgau) then
+    write(iout,1350) 
+    write(iout,1360) shiftc
+  endif
 
   write(iout,1400)
   write(iout,1410) RCChg

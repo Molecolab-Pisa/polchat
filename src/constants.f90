@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ module constants
 
   implicit none
 
-  character(50)     :: version = "4.0.2"
+  character(50)     :: version = "4.1.1"
   integer           :: IMMPCn = 4
   integer,parameter :: LAnMMP = 9
   integer           :: iout = 6

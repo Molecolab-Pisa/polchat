@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -75,6 +75,18 @@ subroutine printout
     enddo
     close(16)
     if (iprt.ge.1) write(iout,2010) 
+  endif
+
+  if (lgau) then
+    if (shiftc .ne. 0) then
+      ! Shift all connectivity by shiftc
+      do i = 1, NChg
+        do ii = 1, LAnMMP
+          if (IAnMMP(i,ii).ne.0) IAnMMP(i,ii) = IAnMMP(i,ii) + shiftc
+        enddo
+      enddo
+    endif
+    ! Print gaussian-style input
     write(iout,4000)
     do i = 1, NChg
       write(iout,4010) 1, (CChg(ii,i), ii=1,3), qpesp(i), pol(i), atnum(atmnam(i)), (IAnMMP(i,ii), ii=1,LAnMMP)

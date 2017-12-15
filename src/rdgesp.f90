@@ -2,7 +2,7 @@
 !                  A Molecolab Tool www.molecolab.dcci.unipi.it/tools
 !
 ! Copyright (C) 2014, 2015, 2016, 2017
-!   S. Caprasecca, C. Curutchet, S. Jurinovich, B. Mennucci
+!   S. Caprasecca, C. Curutchet, B. Mennucci
 !
 ! This program is free software: you can redistribute it and/or modify
 !   it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ subroutine RdGESP
   allocate (D(3*NChg,3*NChg))
 
 ! Read atom coordinates and GESP charges
-  if (ldbs) then
+  if (ldbs.or.lgau) then
     do i = 1, NChg
       read(10,1007) atmnam(i),(CChg(j,i), j=1,3), gesp(i)
     enddo
