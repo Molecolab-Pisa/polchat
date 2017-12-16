@@ -34,17 +34,18 @@ subroutine RdOpts
  1001 format(' Error in input stream: option ',(A),' unknown')
  1002 format(' Error in input stream: connectivity shift ',(A),' mysterious')
  1200 format(' Use the following options to run the program:',/,              &
-            '   -g  --gesp     (required) ... Followed by gesp file name',/,              &
-            '   -m  --mol2     (required) ... Followed by mol2 file name',/,              &
-            '   -p  --pol      (required) ... Followed by polarisability file name',/,    &
-            '   -c  --constr   (required) ... Followed by constraints file name',/,       &
-            '   -x  --screen   (optional) ... Activate Wang Chg-Pol screening',/,&
-            '   -db --database (optional) ... Print database (followed by database file name)',/, &
-            '   -gi --gaussian (optional) ... Print gaussian input in log file',/,&
-            '   -h  --help     (optional) ... Get this help message',/,                &
-            '   -v  --verbose  (optional) ... Run in debug mode (extra printout)',/,   &
-            '   -d  --debug    (optional) ... Run in extra debug mode (lots of printout)',/,&
-            '   -s  --silent   (optional) ... Run in silent mode (minimum printout)')
+            '   -g  --gesp      (required) ... Followed by gesp file name',/,              &
+            '   -m  --mol2      (required) ... Followed by mol2 file name',/,              &
+            '   -p  --pol       (required) ... Followed by polarisability file name',/,    &
+            '   -c  --constr    (required) ... Followed by constraints file name',/,       &
+            '   -x  --screen    (optional) ... Activate Wang Chg-Pol screening',/,&
+            '   -db --database  (optional) ... Print database (followed by database file name)',/, &
+            '   -gi --gaussian  (optional) ... Print gaussian input in log file',/,&
+            '   -cs --connshift (optional) ... Specify shift in connectivity',/,&
+            '   -h  --help      (optional) ... Get this help message',/,                &
+            '   -v  --verbose   (optional) ... Run in debug mode (extra printout)',/,   &
+            '   -d  --debug     (optional) ... Run in extra debug mode (lots of printout)',/,&
+            '   -s  --silent    (optional) ... Run in silent mode (minimum printout)')
 
   call starttime
 
@@ -141,9 +142,11 @@ subroutine RdOpts
           iget = 5
         case ('-gi')
           lgau = .true.
-          iget = 6
         case ('--gaussian')
           lgau = .true.
+        case ('-cs')
+          iget = 6
+        case ('--connshift')
           iget = 6
         case default
           write(iout,1001) trim(args(iarg))
