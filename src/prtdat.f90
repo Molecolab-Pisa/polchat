@@ -38,12 +38,14 @@ subroutine PrtDat
  1210 format(  '                                   > ON')
  1220 format(  '                                   > OFF')
  1300 format(/,' PRINTING --------------------------------------------------')
- 1310 format(  '                                   > level -1 (silent)')
- 1320 format(  '                                   > level  0 (default)')
- 1330 format(  '                                   > level  1 (debug)')
- 1340 format(  '                                   > level  2 (super-debug)')
- 1350 format(  '                                   > Print gaussian input in log')
- 1360 format(  '                                   > Connectivity shift ',i8)
+ 1310 format(  '   > printout level                > -1 (silent)')
+ 1320 format(  '   > printout level                >  0 (default)')
+ 1330 format(  '   > printout level                >  1 (debug)')
+ 1340 format(  '   > printout level                >  2 (super-debug)')
+ 1350 format(  '   > Gaussian-style input          > print in log file')
+ 1355 format(  '   > Gaussian-style input          > do not print')
+ 1360 format(  '   > connectivity shift            > ',i6)
+ 1370 format(  '   > residue number                > ',i6)
  1400 format(/,' CONSTRAINTS -----------------------------------------------')
  1410 format(  '   > whole molecule                > charge ',f9.4)
  1420 format(  '   > fragment                      > charge ',f9.4,/,&
@@ -86,6 +88,9 @@ subroutine PrtDat
   if (lgau) then
     write(iout,1350) 
     write(iout,1360) shiftc
+    write(iout,1370) resnum
+  else 
+    write(iout,1355) 
   endif
 
   write(iout,1400)

@@ -45,6 +45,7 @@ subroutine printout
  2010 format(' Database written.')
  3000 format(1x,(A),1x,(A),2(f12.6,1x),f8.4,1x,i3)
  4000 format(' Gaussian-style input:')
+ 4005 format(1x,115('-'))
  4010 format(1x,i3,1x,3(f10.5,1x),2(f8.4,1x),i3,1x,9(1x,i5))
 
 ! Print GESP, ESP and pol-ESP to standard output
@@ -88,9 +89,11 @@ subroutine printout
     endif
     ! Print gaussian-style input
     write(iout,4000)
+    write(iout,4005)
     do i = 1, NChg
-      write(iout,4010) 1, (CChg(ii,i), ii=1,3), qpesp(i), pol(i), atnum(atmnam(i)), (IAnMMP(i,ii), ii=1,LAnMMP)
+      write(iout,4010) resnum, (CChg(ii,i), ii=1,3), qpesp(i), pol(i), atnum(atmnam(i)), (IAnMMP(i,ii), ii=1,LAnMMP)
     enddo
+    write(iout,4005)
   
   endif
 

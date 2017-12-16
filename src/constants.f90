@@ -21,7 +21,7 @@ module constants
 
   implicit none
 
-  character(50)     :: version = "4.1.1"
+  character(50)     :: version = "4.1.2"
   integer           :: IMMPCn = 4
   integer,parameter :: LAnMMP = 9
   integer           :: iout = 6

@@ -22,7 +22,7 @@ module operative
   implicit none
 
   logical                     :: ldbs, lgau
-  integer                     :: shiftc
+  integer                     :: shiftc, resnum
   integer,parameter           :: maxlenfilnam=200
   character(len=maxlenfilnam) :: filenam,filecon,filepol,filecns,filedbs
 

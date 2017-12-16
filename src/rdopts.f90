@@ -33,6 +33,7 @@ subroutine RdOpts
  1000 format(' Error in input stream: nothing followed option ',(A))
  1001 format(' Error in input stream: option ',(A),' unknown')
  1002 format(' Error in input stream: connectivity shift ',(A),' mysterious')
+ 1003 format(' Error in input stream: residue ID ',(A),' mysterious')
  1200 format(' Use the following options to run the program:',/,              &
             '   -g  --gesp      (required) ... Followed by gesp file name',/,              &
             '   -m  --mol2      (required) ... Followed by mol2 file name',/,              &
@@ -42,6 +43,7 @@ subroutine RdOpts
             '   -db --database  (optional) ... Print database (followed by database file name)',/, &
             '   -gi --gaussian  (optional) ... Print gaussian input in log file',/,&
             '   -cs --connshift (optional) ... Specify shift in connectivity',/,&
+            '   -r  --resnum    (optional) ... Specify residue ID (default is 1)',/,&
             '   -h  --help      (optional) ... Get this help message',/,                &
             '   -v  --verbose   (optional) ... Run in debug mode (extra printout)',/,   &
             '   -d  --debug     (optional) ... Run in extra debug mode (lots of printout)',/,&
@@ -63,6 +65,7 @@ subroutine RdOpts
   filecns = ''
   filedbs = ''
   shiftc  = 0
+  resnum  = 1
 
   if (narg.eq.0) then
     write(IOut,1200)
@@ -90,6 +93,12 @@ subroutine RdOpts
           call value(trim(args(iarg)),shiftc,ios)
           if (ios1.ne.0) then
             write(iout,1002) trim(args(iarg))
+            stop
+          endif
+        case (7) 
+          call value(trim(args(iarg)),resnum,ios)
+          if (ios1.ne.0) then
+            write(iout,1003) trim(args(iarg))
             stop
           endif
       end select
@@ -148,6 +157,10 @@ subroutine RdOpts
           iget = 6
         case ('--connshift')
           iget = 6
+        case ('-r')
+          iget = 7
+        case ('--resnum')
+          iget = 7
         case default
           write(iout,1001) trim(args(iarg))
           stop
