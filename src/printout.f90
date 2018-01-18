@@ -91,7 +91,7 @@ subroutine printout
     write(iout,4000)
     write(iout,4005)
     do i = 1, NChg
-      write(iout,4010) resnum, (CChg(ii,i), ii=1,3), qpesp(i), pol(i), atnum(atmnam(i)), (IAnMMP(i,ii), ii=1,LAnMMP)
+      write(iout,4010) resnum, (CChg(ii,i)/ang2au, ii=1,3), qpesp(i), pol(i), atnum(atmnam(i)), (IAnMMP(i,ii), ii=1,LAnMMP)
     enddo
     write(iout,4005)
   
