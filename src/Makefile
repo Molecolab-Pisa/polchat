@@ -50,8 +50,8 @@ polchat.exe: $(OBJECTS)
 	$(FC) $(FFLAGS) -c $<
 
 clean: 
-	rm -f $(OBJECTS) *.mod polchat.exe
+	rm -f $(OBJECTS) *.mod 
 
 clobber:
-	rm -f $(OBJECTS) polchat.exe
+	rm -f $(OBJECTS) *.mod polchat.exe
 
