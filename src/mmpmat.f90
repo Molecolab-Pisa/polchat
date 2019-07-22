@@ -86,7 +86,7 @@ subroutine MMPMat
 
   call gettime('Forming matrix')
 
-  if (iprt.gt.2) then
+  if (iprt.ge.2) then
     call PrtMat(iout,3*NChg,3*NChg,D,'MMPol matrix before inversion',.false.)
     call gettime('Debug printing 1')
   endif
@@ -99,7 +99,7 @@ subroutine MMPMat
 
   call gettime('Inverting matrix')
   
-  if (iprt.gt.2) then
+  if (iprt.ge.2) then
     call PrtMat(iout,3*NChg,3*NChg,D,'MMPol matrix after inversion',.false.)
     call gettime('Debug printing 2')
   endif
